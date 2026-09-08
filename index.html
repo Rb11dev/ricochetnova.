@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Ricochet Nova</title>
+<meta name="theme-color" content="#0B0E1D" />
+<meta name="description" content="Ricochet Nova — an original neon brick-breaking puzzle game. Swipe to aim, shatter numbered bricks, chain combos, and survive the descent." />
+<style>
+/* ============================================================
+   Ricochet Nova — style.css
+   Original dark "aurora / deep-space" visual identity.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg-0: #0B0E1D;
+  --bg-1: #11142B;
+  --panel: rgba(20, 22, 46, 0.82);
+  --panel-border: rgba(140, 107, 255, 0.22);
+  --teal: #3AF2C7;
+  --blue: #4FB6FF;
+  --violet: #8C6BFF;
+  --magenta: #FF6BD6;
+  --amber: #FF8C4B;
+  --red: #FF4F5E;
+  --text-hi: #F2F4FF;
+  --text-lo: #9AA0C0;
+  --radius: 16px;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background: var(--bg-0);
+  color: var(--text-hi);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+#app {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #171a3a 0%, var(--bg-0) 65%);
+}
+
+#viewport {
+  position: relative;
+  width: 100%; height: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #0B0E1D 0%, #0E1330 60%, #141032 100%);
+  overflow: hidden;
+}
+
+/* ---------- Screens ---------- */
+.screen {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: 24px 20px calc(20px + env(safe-area-inset-bottom));
+  animation: fadeIn 0.28s ease;
+}
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+.brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Splash ---------- */
+#screen-splash { align-items: center; justify-content: center; gap: 18px; }
+.splash-mark {
+  width: 108px; height: 108px; border-radius: 28px;
+  background: conic-gradient(from 210deg, var(--teal), var(--violet), var(--magenta), var(--teal));
+  box-shadow: 0 0 60px rgba(140,107,255,0.45);
+  animation: spin 3.2s linear infinite, pulse 2s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg);} }
+@keyframes pulse { 0%,100% { filter: brightness(1);} 50% { filter: brightness(1.25);} }
+.splash-title { font-size: 30px; text-align:center; }
+.splash-sub { color: var(--text-lo); font-size: 14px; letter-spacing: 0.04em; }
+.splash-bar { width: 180px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.splash-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--teal), var(--violet)); transition: width 0.2s ease; }
+
+/* ---------- Main Menu ---------- */
+#screen-menu { justify-content: space-between; }
+.menu-header { text-align: center; margin-top: 12px; }
+.menu-header .brand { font-size: 34px; background: linear-gradient(90deg, var(--teal), var(--violet), var(--magenta)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.menu-header .tag { color: var(--text-lo); font-size: 13px; margin-top: 4px; }
+
+.menu-stats { display: flex; justify-content: center; gap: 22px; margin: 14px 0 6px; }
+.stat-pill { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--text-lo); display:flex; align-items:center; gap:6px;}
+.stat-pill b { color: var(--text-hi); font-family: 'Space Grotesk', sans-serif; }
+
+.menu-buttons { display: flex; flex-direction: column; gap: 12px; margin: 10px 0; }
+.btn {
+  border: none; border-radius: var(--radius);
+  padding: 16px 20px;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px;
+  color: var(--text-hi);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.btn:active { transform: scale(0.97); filter: brightness(1.15); }
+.btn-primary { background: linear-gradient(135deg, var(--teal), var(--violet)); color: #0A0B17; box-shadow: 0 8px 24px rgba(58,242,199,0.18); }
+.btn-secondary { background: var(--panel); }
+.btn small { font-weight: 500; font-size: 12px; opacity: 0.75; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--panel-border);
+  background: var(--panel); color: var(--text-hi); display:flex; align-items:center; justify-content:center;
+  font-size: 18px; cursor:pointer;
+}
+.menu-footer { display: flex; justify-content: center; gap: 12px; margin-top: 8px; }
+
+/* ---------- Mode select / level select ---------- */
+.panel-title { font-family:'Space Grotesk',sans-serif; font-size: 20px; margin: 4px 0 14px; display:flex; align-items:center; gap:10px; }
+.top-bar { display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px;}
+
+.level-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  overflow-y: auto; padding-bottom: 12px; flex: 1;
+}
+.level-cell {
+  aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--panel-border);
+  background: var(--panel); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; cursor:pointer; gap:2px;
+}
+.level-cell.locked { opacity: 0.35; }
+.level-cell .stars { font-size: 9px; letter-spacing: 1px; color: var(--amber); }
+.level-cell.current { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(58,242,199,0.35); }
+
+/* ---------- HUD (in-game) ---------- */
+#screen-game { padding: 0; }
+#hud {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: calc(12px + env(safe-area-inset-top)) 14px 0;
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
+.hud-score { font-family:'Space Grotesk',sans-serif; font-size: 22px; font-weight:700; text-shadow: 0 0 16px rgba(140,107,255,0.5);}
+.hud-sub { font-size: 11px; color: var(--text-lo); }
+.hud-combo { font-size: 13px; color: var(--magenta); font-weight:600; height:16px; }
+.hud-pause-btn { pointer-events:auto; }
+.hud-target { font-size: 11px; color: var(--text-lo); }
+.hud-progress { width: 90px; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow:hidden; margin-top:2px;}
+.hud-progress-fill { height:100%; background: linear-gradient(90deg, var(--teal), var(--magenta)); width:0%; }
+.hud-badges { display:flex; gap:6px; margin-top: 4px; }
+.badge { font-size: 10px; padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,0.08); }
+.badge.laser { color: var(--teal); border: 1px solid var(--teal); }
+.badge.scoreX { color: var(--magenta); border: 1px solid var(--magenta); }
+
+#gameCanvasWrap { position: absolute; inset: 0; }
+#gameCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+/* ---------- Overlays ---------- */
+.overlay {
+  position: absolute; inset: 0; z-index: 10;
+  background: rgba(6,7,16,0.72); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.overlay.active { display: flex; }
+.overlay-card {
+  width: 100%; max-width: 380px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 22px;
+  padding: 26px 22px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: cardIn 0.3s cubic-bezier(.2,.9,.25,1.2);
+}
+@keyframes cardIn { from { opacity:0; transform: translateY(16px) scale(0.96);} to { opacity:1; transform: translateY(0) scale(1);} }
+.overlay-title { font-family:'Space Grotesk',sans-serif; font-size: 24px; margin-bottom: 4px; }
+.overlay-sub { color: var(--text-lo); font-size: 13px; margin-bottom: 18px; }
+.overlay-score { font-family:'Space Grotesk',sans-serif; font-size: 40px; font-weight:700; margin: 6px 0 2px;
+  background: linear-gradient(90deg, var(--teal), var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.overlay-newbest { color: var(--amber); font-size: 12px; font-weight:600; margin-bottom: 10px; }
+.stars-row { font-size: 30px; letter-spacing: 8px; margin: 8px 0 16px; color: var(--text-lo); }
+.stars-row .on { color: var(--amber); text-shadow: 0 0 12px rgba(255,140,75,0.7); }
+.overlay-buttons { display:flex; flex-direction:column; gap: 10px; margin-top: 14px; }
+
+/* ---------- Settings ---------- */
+.setting-row { display:flex; align-items:center; justify-content:space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.setting-row label { font-size: 14px; }
+input[type=range] { width: 140px; accent-color: var(--teal); }
+.toggle { width: 46px; height: 26px; border-radius: 999px; background: rgba(255,255,255,0.12); position: relative; cursor:pointer; border: 1px solid var(--panel-border); }
+.toggle .knob { position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background: var(--text-hi); transition: left .15s ease; }
+.toggle.on { background: linear-gradient(90deg, var(--teal), var(--violet)); }
+.toggle.on .knob { left: 22px; }
+
+/* ---------- Tutorial ---------- */
+.tut-hand { font-size: 40px; animation: swipeHint 1.4s ease-in-out infinite; }
+@keyframes swipeHint { 0%,100% { transform: translate(0,0);} 50% { transform: translate(-18px,-28px);} }
+
+.scroll { overflow-y: auto; }
+::-webkit-scrollbar { width: 0; height: 0; }
+
+.small-note { font-size: 11px; color: var(--text-lo); text-align:center; margin-top: 10px; line-height:1.5; }
+.link-btn { background: none; border: none; color: var(--blue); font-size: 12px; cursor: pointer; text-decoration: underline; }
+
+</style>
+</head>
+<body>
+<div id="app">
+<div id="viewport">
+
+  <!-- ============ SPLASH ============ -->
+  <section class="screen active" id="screen-splash">
+    <div class="splash-mark"></div>
+    <div class="splash-title brand">RICOCHET <span style="color:var(--teal)">NOVA</span></div>
+    <div class="splash-sub">AN ORIGINAL BRICK-SHATTERING PUZZLE</div>
+    <div class="splash-bar"><div class="splash-bar-fill" id="splashFill"></div></div>
+  </section>
+
+  <!-- ============ MAIN MENU ============ -->
+  <section class="screen" id="screen-menu">
+    <div>
+      <div class="menu-header">
+        <div class="brand">RICOCHET NOVA</div>
+        <div class="tag">Aim. Ricochet. Shatter the descent.</div>
+      </div>
+      <div class="menu-stats">
+        <div class="stat-pill">🏆 Best <b id="statHigh">0</b></div>
+        <div class="stat-pill">🪙 Coins <b id="statCoins">0</b></div>
+      </div>
+    </div>
+
+    <div class="menu-buttons">
+      <button class="btn btn-primary" id="btnLevelMode">Level Mode <small>100 stages ›</small></button>
+      <button class="btn btn-secondary" id="btnEndless">Endless Mode <small>chase a high score ›</small></button>
+      <button class="btn btn-secondary" id="btnDaily">Daily Challenge <small id="dailyStatus">new today ›</small></button>
+    </div>
+
+    <div class="menu-footer">
+      <button class="icon-btn" id="btnSettings" title="Settings">⚙️</button>
+      <button class="icon-btn" id="btnHowTo" title="How to play">❔</button>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL SELECT ============ -->
+  <section class="screen" id="screen-levels">
+    <div class="top-bar">
+      <button class="icon-btn" id="btnLevelsBack">←</button>
+      <div class="panel-title">Level Mode</div>
+      <div style="width:44px"></div>
+    </div>
+    <div class="level-grid scroll" id="levelGrid"></div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section class="screen" id="screen-game">
+    <div id="gameCanvasWrap"><canvas id="gameCanvas"></canvas></div>
+
+    <div id="hud">
+      <div class="hud-left">
+        <div class="hud-score" id="hudScore">0</div>
+        <div class="hud-sub" id="hudModeLabel">Endless</div>
+        <div class="hud-combo" id="hudCombo"></div>
+        <div class="hud-badges" id="hudBadges"></div>
+      </div>
+      <div class="hud-right">
+        <button class="icon-btn hud-pause-btn" id="btnPause">⏸</button>
+        <div class="hud-target" id="hudTargetWrap" style="display:none;">
+          Target <b id="hudTarget">0</b>
+          <div class="hud-progress"><div class="hud-progress-fill" id="hudProgressFill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div class="overlay" id="overlayPause">
+      <div class="overlay-card">
+        <div class="overlay-title">Paused</div>
+        <div class="overlay-sub">Take a breath. The bricks will wait.</div>
+        <div class="overlay-buttons">
+          <button class="btn btn-primary" id="btnResume">Resume</button>
+          <button class="btn btn-secondary" id="btnRestartFromPause">Restart</button>
+          <button class="btn btn-secondary" id="btnPauseSettings">Settings</button>
+          <button class="btn btn-secondary" id="btnQuitToMenu">Quit to Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over overlay -->
+    <div class="overlay" id="overlayGameOver">
+      <div class="overlay-card">
+        <div class="overlay-title">Run Over</div>
+        <div class="overlay-sub" id="gameOverSub">The bricks reached the line.</div>
+        <div class="overlay-score" id="gameOverScore">0</div>
+        <div class="overlay-newbest" id="gameOverBest" style="display:none;">✨ New Best Score!</div>
+        <div class="overlay-buttons">
+          <button class="btn btn-primary" id="btnPlayAgain">Play Again</button>
+          <button class="btn btn-secondary" id="btnGameOverMenu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level complete overlay -->
+    <div class="overlay" id="overlayLevelComplete">
+      <div class="overlay-card">
+        <div class="overlay-title">Level Cleared!</div>
+        <div class="stars-row" id="starsRow">★ ★ ★</div>
+        <div class="overlay-score" id="levelCompleteScore">0</div>
+        <div class="overlay-buttons">
+          <button class="btn btn-primary" id="btnNextLevel">Next Level</button>
+          <button class="btn btn-secondary" id="btnLevelMenu">Level Select</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- First-run tutorial overlay -->
+    <div class="overlay" id="overlayTutorial">
+      <div class="overlay-card">
+        <div class="overlay-title">How to Play</div>
+        <div class="tut-hand">👆</div>
+        <div class="overlay-sub" style="margin-top:10px;">
+          Swipe up from the launcher to aim, then release to fire your balls.
+          They ricochet off the walls and shatter numbered bricks. Clear rows before
+          they reach the red danger line. Grab glowing power-up bricks for an edge.
+        </div>
+        <div class="overlay-buttons">
+          <button class="btn btn-primary" id="btnTutorialGo">Let's Go</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="screen-settings">
+    <div class="top-bar">
+      <button class="icon-btn" id="btnSettingsBack">←</button>
+      <div class="panel-title">Settings</div>
+      <div style="width:44px"></div>
+    </div>
+    <div class="scroll" style="flex:1;">
+      <div class="setting-row">
+        <label>Sound Effects</label>
+        <input type="range" id="sfxSlider" min="0" max="1" step="0.01" />
+      </div>
+      <div class="setting-row">
+        <label>Music</label>
+        <input type="range" id="musicSlider" min="0" max="1" step="0.01" />
+      </div>
+      <div class="setting-row">
+        <label>Mute All</label>
+        <div class="toggle" id="toggleMute"><div class="knob"></div></div>
+      </div>
+      <div class="setting-row">
+        <label>Vibration</label>
+        <div class="toggle" id="toggleHaptics"><div class="knob"></div></div>
+      </div>
+      <div class="setting-row" style="border-bottom:none; flex-direction:column; align-items:flex-start; gap:6px;">
+        <label>About</label>
+        <div class="small-note" style="text-align:left; margin:0;">
+          Ricochet Nova is an original puzzle game. All art is drawn procedurally
+          with gradients and glow effects, and every sound is synthesized live — nothing
+          is copied from any other game.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</div>
+
+<script>
+/* ============================================================
+   Ricochet Nova — utils.js
+   Small, dependency-free helpers used across the game.
+   ============================================================ */
+'use strict';
+
+const Utils = (() => {
+
+  function clamp(v, min, max) { return v < min ? min : (v > max ? max : v); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function dist(x1, y1, x2, y2) { const dx = x2 - x1, dy = y2 - y1; return Math.sqrt(dx * dx + dy * dy); }
+
+  // Deterministic PRNG (mulberry32) so daily challenges & level seeds are reproducible.
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hashStringToSeed(str) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return (h >>> 0);
+  }
+
+  // Simple generic object pool to avoid per-frame allocation (perf requirement).
+  class ObjectPool {
+    constructor(factory, reset, initialSize = 32) {
+      this._factory = factory;
+      this._reset = reset;
+      this._free = [];
+      for (let i = 0; i < initialSize; i++) this._free.push(factory());
+      this.active = [];
+    }
+    obtain() {
+      const obj = this._free.pop() || this._factory();
+      this.active.push(obj);
+      return obj;
+    }
+    release(obj) {
+      const idx = this.active.indexOf(obj);
+      if (idx !== -1) this.active.splice(idx, 1);
+      this._reset(obj);
+      this._free.push(obj);
+    }
+    releaseAll() {
+      while (this.active.length) this.release(this.active[0]);
+    }
+  }
+
+  function formatNumber(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  }
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  return { clamp, lerp, dist, mulberry32, hashStringToSeed, ObjectPool, formatNumber, todayKey };
+})();
+
+/* ============================================================
+   Ricochet Nova — audio.js
+   All sounds are synthesized at runtime with the WebAudio API.
+   No external audio files are used, so everything here is 100%
+   original and free of any licensing concerns.
+   ============================================================ */
+'use strict';
+
+class AudioManager {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.sfxGain = null;
+    this.musicGain = null;
+    this.musicNodes = [];
+    this.musicPlaying = false;
+    this.sfxVolume = 0.8;
+    this.musicVolume = 0.4;
+    this.muted = false;
+    this._unlocked = false;
+  }
+
+  _ensureCtx() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.connect(this.ctx.destination);
+    this.sfxGain = this.ctx.createGain();
+    this.sfxGain.gain.value = this.sfxVolume;
+    this.sfxGain.connect(this.master);
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = this.musicVolume;
+    this.musicGain.connect(this.master);
+  }
+
+  unlock() {
+    this._ensureCtx();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this._unlocked = true;
+  }
+
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 1;
+  }
+
+  setSfxVolume(v) { this.sfxVolume = v; if (this.sfxGain) this.sfxGain.gain.value = v; }
+  setMusicVolume(v) { this.musicVolume = v; if (this.musicGain) this.musicGain.gain.value = v; }
+
+  // --- low level tone helper -------------------------------------------------
+  _tone({ freq = 440, type = 'sine', duration = 0.12, gain = 0.3, dest, glideTo = null, delay = 0 }) {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (glideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(1, glideTo), t0 + duration);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(g);
+    g.connect(dest || this.sfxGain);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  _noise({ duration = 0.15, gain = 0.25, dest, filterFreq = 2000 }) {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    const bufferSize = this.ctx.sampleRate * duration;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = filterFreq;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(gain, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    src.connect(filter); filter.connect(g); g.connect(dest || this.sfxGain);
+    src.start(t0);
+  }
+
+  // --- game sound effects -----------------------------------------------------
+  launch() { this._tone({ freq: 660, glideTo: 980, type: 'triangle', duration: 0.09, gain: 0.22 }); }
+  wallBounce() { this._tone({ freq: 320, type: 'sine', duration: 0.05, gain: 0.12 }); }
+  brickHit(pitch = 1) { this._tone({ freq: 260 * pitch, glideTo: 180 * pitch, type: 'square', duration: 0.06, gain: 0.16 }); }
+  brickDestroy(pitch = 1) {
+    this._tone({ freq: 520 * pitch, glideTo: 90, type: 'sawtooth', duration: 0.16, gain: 0.2 });
+    this._noise({ duration: 0.12, gain: 0.12, filterFreq: 3500 });
+  }
+  combo(step = 1) {
+    const base = 440 + Math.min(step, 12) * 55;
+    this._tone({ freq: base, glideTo: base * 1.6, type: 'triangle', duration: 0.14, gain: 0.22 });
+  }
+  powerup() {
+    this._tone({ freq: 300, glideTo: 900, type: 'sine', duration: 0.28, gain: 0.22 });
+    this._tone({ freq: 450, glideTo: 1200, type: 'sine', duration: 0.28, gain: 0.14, delay: 0.05 });
+  }
+  buttonClick() { this._tone({ freq: 500, type: 'square', duration: 0.045, gain: 0.14 }); }
+  ballLost() { this._tone({ freq: 200, glideTo: 60, type: 'sine', duration: 0.3, gain: 0.18 }); }
+  gameOver() {
+    [440, 370, 293, 220].forEach((f, i) => this._tone({ freq: f, type: 'sawtooth', duration: 0.35, gain: 0.2, delay: i * 0.16 }));
+  }
+  levelComplete() {
+    [440, 554, 659, 880].forEach((f, i) => this._tone({ freq: f, type: 'sine', duration: 0.22, gain: 0.22, delay: i * 0.09 }));
+  }
+  danger() { this._tone({ freq: 150, type: 'square', duration: 0.2, gain: 0.15 }); }
+
+  // --- ambient background pad, fully synthesized & loop-free (drifting drone) --
+  startMusic() {
+    if (!this.ctx || this.musicPlaying) return;
+    this.musicPlaying = true;
+    const notes = [110, 130.81, 146.83, 164.81]; // A2 C3 D3 E3 — calm aurora drone
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const g = this.ctx.createGain();
+      g.gain.value = 0;
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 0.05 + i * 0.02;
+      const lfoGain = this.ctx.createGain();
+      lfoGain.gain.value = 0.02;
+      lfo.connect(lfoGain);
+      lfoGain.connect(g.gain);
+      osc.connect(g);
+      g.connect(this.musicGain);
+      g.gain.setTargetAtTime(0.05 - i * 0.008, this.ctx.currentTime, 2);
+      osc.start(); lfo.start();
+      this.musicNodes.push(osc, lfo, g);
+    });
+  }
+  stopMusic() {
+    this.musicNodes.forEach(n => { try { n.stop && n.stop(); n.disconnect && n.disconnect(); } catch (e) {} });
+    this.musicNodes = [];
+    this.musicPlaying = false;
+  }
+}
+
+/* ============================================================
+   Ricochet Nova — save.js
+   Persistent local save system. Wraps localStorage with a
+   versioned schema so future updates can migrate old saves.
+   ============================================================ */
+'use strict';
+
+class SaveManager {
+  constructor() {
+    this.KEY = 'ricochetNova.save.v1';
+    this.data = this._load();
+  }
+
+  _defaults() {
+    return {
+      version: 1,
+      highScoreEndless: 0,
+      currentLevel: 1,
+      completedLevels: {},      // { [levelNumber]: { stars, score } }
+      coins: 0,
+      achievements: {},         // { [id]: true }
+      settings: {
+        sfxVolume: 0.8,
+        musicVolume: 0.4,
+        muted: false,
+        hapticsEnabled: true,
+        selectedSkin: 'aurora'
+      },
+      daily: {
+        lastPlayedKey: null,    // 'YYYY-MM-DD'
+        streak: 0,
+        bestScoreKey: null,
+        bestScore: 0
+      },
+      unlockedSkins: ['aurora'],
+      tutorialSeen: false
+    };
+  }
+
+  _load() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (!raw) return this._defaults();
+      const parsed = JSON.parse(raw);
+      return Object.assign(this._defaults(), parsed, {
+        settings: Object.assign(this._defaults().settings, parsed.settings || {}),
+        daily: Object.assign(this._defaults().daily, parsed.daily || {})
+      });
+    } catch (e) {
+      console.warn('Save load failed, using defaults', e);
+      return this._defaults();
+    }
+  }
+
+  save() {
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(this.data));
+    } catch (e) {
+      console.warn('Save write failed', e);
+    }
+  }
+
+  // --- convenience accessors ---
+  setHighScoreEndless(score) {
+    if (score > this.data.highScoreEndless) { this.data.highScoreEndless = score; this.save(); return true; }
+    return false;
+  }
+
+  recordLevelComplete(levelNum, stars, score) {
+    const existing = this.data.completedLevels[levelNum];
+    if (!existing || existing.stars < stars || existing.score < score) {
+      this.data.completedLevels[levelNum] = { stars: Math.max(stars, existing ? existing.stars : 0), score: Math.max(score, existing ? existing.score : 0) };
+    }
+    if (levelNum >= this.data.currentLevel) this.data.currentLevel = levelNum + 1;
+    this.save();
+  }
+
+  addCoins(n) { this.data.coins = Math.max(0, this.data.coins + n); this.save(); }
+
+  unlockAchievement(id) {
+    if (!this.data.achievements[id]) { this.data.achievements[id] = true; this.save(); return true; }
+    return false;
+  }
+
+  recordDailyResult(dateKey, score) {
+    this.data.daily.lastPlayedKey = dateKey;
+    if (score > (this.data.daily.bestScoreKey === dateKey ? this.data.daily.bestScore : 0)) {
+      this.data.daily.bestScore = score;
+      this.data.daily.bestScoreKey = dateKey;
+    }
+    this.save();
+  }
+
+  hasDailyPlayedToday(dateKey) { return this.data.daily.lastPlayedKey === dateKey; }
+
+  updateSettings(patch) { Object.assign(this.data.settings, patch); this.save(); }
+}
+
+/* ============================================================
+   Ricochet Nova — particles.js
+   Lightweight pooled particle system. All particles are drawn
+   as simple glowing circles/shards — no image assets required.
+   ============================================================ */
+'use strict';
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+    this.life = 0; this.maxLife = 1; this.size = 2; this.color = '#ffffff'; this.shape = 'circle';
+    this.rotation = 0; this.vrot = 0; this.active = false;
+  }
+}
+
+class ParticleSystem {
+  constructor(maxParticles = 400) {
+    this.pool = new Utils.ObjectPool(() => new Particle(), p => p.reset(), maxParticles);
+  }
+
+  burst(x, y, color, count = 14, opts = {}) {
+    const speed = opts.speed || 220;
+    const life = opts.life || 0.55;
+    const size = opts.size || 3.2;
+    for (let i = 0; i < count; i++) {
+      const p = this.pool.obtain();
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+      const spd = speed * (0.4 + Math.random() * 0.9);
+      p.x = x; p.y = y;
+      p.vx = Math.cos(angle) * spd;
+      p.vy = Math.sin(angle) * spd;
+      p.life = 0; p.maxLife = life * (0.7 + Math.random() * 0.6);
+      p.size = size * (0.6 + Math.random() * 0.8);
+      p.color = color;
+      p.shape = Math.random() < 0.35 ? 'square' : 'circle';
+      p.rotation = Math.random() * Math.PI * 2;
+      p.vrot = (Math.random() - 0.5) * 10;
+      p.active = true;
+    }
+  }
+
+  sparkle(x, y, color) {
+    const p = this.pool.obtain();
+    p.x = x; p.y = y; p.vx = (Math.random() - 0.5) * 40; p.vy = -Math.random() * 60 - 20;
+    p.life = 0; p.maxLife = 0.4; p.size = 1.6 + Math.random() * 1.5; p.color = color; p.shape = 'circle';
+    p.rotation = 0; p.vrot = 0; p.active = true;
+  }
+
+  update(dt) {
+    const arr = this.pool.active;
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const p = arr[i];
+      p.life += dt;
+      if (p.life >= p.maxLife) { this.pool.release(p); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 90 * dt; // gentle gravity for a satisfying fall-away
+      p.vx *= (1 - dt * 0.6);
+      p.rotation += p.vrot * dt;
+    }
+  }
+
+  render(ctx) {
+    const arr = this.pool.active;
+    for (let i = 0; i < arr.length; i++) {
+      const p = arr[i];
+      const t = 1 - p.life / p.maxLife;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = Utils.clamp(t, 0, 1);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 8 * t;
+      const s = p.size * (0.5 + t);
+      if (p.shape === 'square') {
+        ctx.fillRect(-s / 2, -s / 2, s, s);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  clear() { this.pool.releaseAll(); }
+}
+
+/* ============================================================
+   Ricochet Nova — levels.js
+   Procedural level/board generation. Level Mode has 100+
+   generated levels (deterministic per level number), Endless
+   Mode scales difficulty forever, and Daily Challenge uses a
+   seed derived from the calendar date so every player gets the
+   same board on a given day.
+   ============================================================ */
+'use strict';
+
+const LevelGen = (() => {
+
+  const COLS = 7;
+
+  // Brick "tiers" map a numeric health value to a color from our original
+  // aurora palette (no borrowed art — pure gradients/CSS colors).
+  const TIER_COLORS = [
+    '#3AF2C7', // teal   - low health
+    '#4FB6FF', // blue
+    '#8C6BFF', // violet
+    '#FF6BD6', // magenta
+    '#FF8C4B', // amber
+    '#FF4F5E'  // red    - high health
+  ];
+
+  function colorForValue(value, maxValue) {
+    const ratio = Utils.clamp(value / maxValue, 0, 1);
+    const idx = Math.min(TIER_COLORS.length - 1, Math.floor(ratio * TIER_COLORS.length));
+    return TIER_COLORS[idx];
+  }
+
+  // Build one row of brick values using a seeded RNG and a difficulty scalar.
+  function buildRow(rng, difficulty, rowIndex) {
+    const row = new Array(COLS).fill(0);
+    const density = Utils.clamp(0.45 + difficulty * 0.03, 0.45, 0.92);
+    const maxVal = Math.max(1, Math.round(1 + difficulty * 1.6));
+    for (let c = 0; c < COLS; c++) {
+      if (rng() < density) {
+        row[c] = 1 + Math.floor(rng() * maxVal);
+      }
+    }
+    // Guarantee the row isn't fully empty.
+    if (row.every(v => v === 0)) row[Math.floor(rng() * COLS)] = 1 + Math.floor(rng() * maxVal);
+
+    // Occasionally place a special/power-up brick (encoded as negative-tagged object later).
+    let special = null;
+    if (rng() < Math.min(0.35, 0.08 + difficulty * 0.01)) {
+      const specialCols = row.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0);
+      if (specialCols.length) {
+        const col = specialCols[Math.floor(rng() * specialCols.length)];
+        const types = ['laser', 'multi', 'bomb', 'freeze', 'redirect', 'scoreX'];
+        special = { col, type: types[Math.floor(rng() * types.length)] };
+      }
+    }
+    return { values: row, special, maxVal };
+  }
+
+  // --- LEVEL MODE ---------------------------------------------------------
+  // 100+ generated levels. Each level is fully deterministic given its
+  // number, so it can be regenerated identically at any time (no need to
+  // store full layouts in the save file).
+  function generateLevel(levelNumber) {
+    const rng = Utils.mulberry32(Utils.hashStringToSeed('level-' + levelNumber));
+    const difficulty = Math.min(40, Math.floor(levelNumber / 2));
+    const initialRows = Math.min(8, 3 + Math.floor(levelNumber / 12));
+    const rows = [];
+    for (let r = 0; r < initialRows; r++) rows.push(buildRow(rng, difficulty * (0.5 + r * 0.1), r));
+
+    const targetScore = Math.round(600 * levelNumber * (1 + difficulty * 0.05));
+    const ballCount = 1;
+    const turnsBudget = 14 + Math.floor(levelNumber / 5); // rows-until-danger allowance, informs pacing/star thresholds
+
+    return {
+      mode: 'level',
+      number: levelNumber,
+      seed: 'level-' + levelNumber,
+      cols: COLS,
+      rows,
+      difficultyStep: 0.35 + difficulty * 0.02,
+      targetScore,
+      starThresholds: [Math.round(targetScore * 0.5), targetScore, Math.round(targetScore * 1.6)],
+      ballCount,
+      turnsBudget,
+      rng
+    };
+  }
+
+  // --- ENDLESS MODE --------------------------------------------------------
+  function generateEndlessSeed() {
+    return { mode: 'endless', seed: 'endless-' + Date.now() + '-' + Math.floor(Math.random() * 1e6), cols: COLS };
+  }
+
+  function endlessRow(rng, turnIndex) {
+    const difficulty = turnIndex * 0.6;
+    return buildRow(rng, difficulty, turnIndex);
+  }
+
+  // --- DAILY CHALLENGE -------------------------------------------------------
+  function generateDaily(dateKey) {
+    const rng = Utils.mulberry32(Utils.hashStringToSeed('daily-' + dateKey));
+    const rows = [];
+    const initialRows = 5;
+    for (let r = 0; r < initialRows; r++) rows.push(buildRow(rng, 8 + r * 1.5, r));
+    return { mode: 'daily', dateKey, cols: COLS, rows, difficultyStep: 0.55, rng };
+  }
+
+  return { COLS, TIER_COLORS, colorForValue, buildRow, generateLevel, generateEndlessSeed, endlessRow, generateDaily };
+})();
+
+/* ============================================================
+   Ricochet Nova — entities.js
+   Ball & Brick entities, plus the original power-up catalogue.
+   ============================================================ */
+'use strict';
+
+class Ball {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+    this.radius = 7;
+    this.active = false;
+    this.launched = false;
+    this.returned = false;
+    this.trail = [];
+    this.laser = false; // true while a Laser Ball power-up is active for this shot
+  }
+}
+
+// Power-up catalogue — all original mechanics/names, distinct from any
+// existing game's power-up set.
+const POWERUPS = {
+  laser:    { id: 'laser',    name: 'Laser Ball',      color: '#3AF2C7', desc: 'Next balls pierce straight through a full column of bricks.' },
+  multi:    { id: 'multi',    name: 'Multi Ball',      color: '#4FB6FF', desc: 'Adds extra balls to your volley for this run.' },
+  bomb:     { id: 'bomb',     name: 'Bomb Block',      color: '#FF8C4B', desc: 'Destroying it damages every brick around it.' },
+  freeze:   { id: 'freeze',   name: 'Freeze',          color: '#8CE8FF', desc: 'Bricks skip their next downward shift.' },
+  redirect: { id: 'redirect', name: 'Redirect Block',  color: '#8C6BFF', desc: 'Bounces the ball off at a lively new angle.' },
+  scoreX:   { id: 'scoreX',   name: 'Score Multiplier', color: '#FF6BD6', desc: 'Doubles score earned for a short time.' }
+};
+
+class Brick {
+  constructor() { this.reset(); }
+  reset() {
+    this.col = 0; this.row = 0;      // row is logical distance-from-top (0 = topmost active row)
+    this.x = 0; this.y = 0; this.w = 0; this.h = 0;
+    this.value = 0; this.maxValue = 1;
+    this.alive = false;
+    this.special = null; // one of POWERUPS keys, or null
+    this.hitFlash = 0;   // seconds remaining of hit-flash animation
+    this.spawnT = 0;     // for pop-in scale animation
+    this.shakeT = 0;
+  }
+
+  color() { return LevelGen.colorForValue(this.value, this.maxValue); }
+
+  takeHit(dmg = 1) {
+    this.value -= dmg;
+    this.hitFlash = 0.12;
+    this.shakeT = 0.15;
+    return this.value <= 0;
+  }
+}
+
+/* ============================================================
+   Ricochet Nova — game.js
+   The core game engine: swipe aiming, trajectory prediction,
+   ball physics, brick collisions, turn/row progression, combos,
+   scoring, power-ups, and rendering. One class, cleanly divided
+   into labelled sections below.
+   ============================================================ */
+'use strict';
+
+const GameState = { AIM: 'aim', SHOOTING: 'shooting', PAUSED: 'paused', GAMEOVER: 'gameover', LEVELCOMPLETE: 'levelcomplete', IDLE: 'idle' };
+
+class Game {
+  constructor(canvas, { audio, save, onEvent }) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.audio = audio;
+    this.save = save;
+    this.onEvent = onEvent || (() => {}); // callback for UI: (name, payload) => void
+
+    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.width = 0; this.height = 0;
+
+    this.particles = new ParticleSystem(500);
+    this.ballPool = new Utils.ObjectPool(() => new Ball(), b => b.reset(), 24);
+    this.bricks = []; // active Brick instances (not pooled across boards — small counts)
+
+    this.state = GameState.IDLE;
+    this.mode = 'endless';         // 'endless' | 'level' | 'daily'
+    this.levelData = null;
+    this.turnIndex = 0;
+    this.rowQueue = [];            // queued upcoming rows (from level data) for level/daily modes
+    this.rng = Utils.mulberry32(1);
+
+    this.cols = LevelGen.COLS;
+    this.rowHeight = 34;
+    this.topMargin = 70;
+    this.dangerRow = 10;           // rows 0..dangerRow-1 are safe
+
+    this.ballCount = 1;
+    this.ballSpeed = 640;
+    this.ballsToLaunch = 0;
+    this.ballsLaunchedThisTurn = 0;
+    this.ballsReturnedThisTurn = 0;
+    this.launchTimer = 0;
+    this.launchInterval = 0.045;
+    this.launcherX = 0;
+    this.nextLauncherX = null;
+
+    this.aimAngle = -Math.PI / 2;
+    this.aiming = false;
+    this.aimValid = false;
+
+    this.score = 0;
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.comboWindow = 0.7;
+
+    this.laserNextShot = false;
+    this.laserShotsRemainingBalls = new Set();
+    this.freezeNextShift = false;
+    this.scoreMultiplierTimer = 0;
+
+    this.shakeTime = 0; this.shakeMag = 0;
+    this.dangerFlashTimer = 0;
+
+    this._raf = null;
+    this._lastT = 0;
+
+    this._resize = this._resize.bind(this);
+    window.addEventListener('resize', this._resize);
+    this._bindInput();
+  }
+
+  // ============================================================ SETUP
+  resize() { this._resize(); }
+
+  _resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.width = rect.width; this.height = rect.height;
+    this.canvas.width = Math.round(this.width * this.dpr);
+    this.canvas.height = Math.round(this.height * this.dpr);
+    this.canvas.style.width = this.width + 'px';
+    this.canvas.style.height = this.height + 'px';
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.rowHeight = Math.max(26, Math.min(40, this.width / this.cols * 0.62));
+    this.launcherX = this.width / 2;
+    this._layoutBricks();
+  }
+
+  startMode(mode, levelNumber = 1) {
+    this.mode = mode;
+    this.score = 0; this.combo = 0; this.comboTimer = 0;
+    this.turnIndex = 0;
+    this.ballCount = 1;
+    this.laserNextShot = false; this.freezeNextShift = false; this.scoreMultiplierTimer = 0;
+    this.bricks.forEach(b => this._releaseBrick(b));
+    this.bricks = [];
+    this.ballPool.releaseAll();
+    this.particles.clear();
+    this.launcherX = this.width / 2;
+    this.nextLauncherX = null;
+
+    if (mode === 'level') {
+      this.levelData = LevelGen.generateLevel(levelNumber);
+      this.rng = this.levelData.rng;
+      this.rowQueue = this.levelData.rows.slice();
+      this.dangerRow = 10;
+    } else if (mode === 'daily') {
+      const dk = Utils.todayKey();
+      this.levelData = LevelGen.generateDaily(dk);
+      this.rng = this.levelData.rng;
+      this.rowQueue = this.levelData.rows.slice();
+      this.dangerRow = 10;
+    } else {
+      this.levelData = LevelGen.generateEndlessSeed();
+      this.rng = Utils.mulberry32(Utils.hashStringToSeed(this.levelData.seed));
+      this.rowQueue = [];
+      this.dangerRow = 10;
+    }
+
+    // Seed initial rows onto the board. Each new row must push previously
+    // placed rows down first, otherwise every row would stack at row 0.
+    const startRows = mode === 'endless' ? 3 : this.rowQueue.length;
+    for (let i = 0; i < startRows; i++) {
+      if (i > 0) for (const b of this.bricks) b.row += 1;
+      this._spawnRow();
+    }
+
+    this.state = GameState.AIM;
+    this.aimAngle = -Math.PI / 2;
+    this.onEvent('hud', this._hud());
+    this._start();
+  }
+
+  _start() {
+    if (this._raf) return;
+    this._lastT = performance.now();
+    const loop = (t) => {
+      const dt = Math.min(0.033, (t - this._lastT) / 1000);
+      this._lastT = t;
+      if (this.state !== GameState.PAUSED) this.update(dt);
+      this.render();
+      this._raf = requestAnimationFrame(loop);
+    };
+    this._raf = requestAnimationFrame(loop);
+  }
+
+  stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; } }
+
+  // ============================================================ BOARD / ROWS
+  _nextRowData() {
+    if (this.rowQueue.length) return this.rowQueue.shift();
+    const diffStep = (this.levelData && this.levelData.difficultyStep) || 0.4;
+    return LevelGen.endlessRow(this.rng, this.turnIndex * diffStep + 1);
+  }
+
+  _spawnRow() {
+    const data = this._nextRowData();
+    for (let c = 0; c < this.cols; c++) {
+      const val = data.values[c];
+      if (!val) continue;
+      const brick = new Brick();
+      brick.col = c; brick.row = 0;
+      brick.value = val; brick.maxValue = Math.max(val, data.maxVal || val);
+      brick.special = (data.special && data.special.col === c) ? data.special.type : null;
+      brick.spawnT = 0;
+      brick.alive = true;
+      this.bricks.push(brick);
+    }
+    // shift every existing brick down one row first is handled by caller (endTurn),
+    // this function only ever places a fresh row at row 0.
+    this._layoutBricks();
+  }
+
+  _layoutBricks() {
+    const colW = this.width / this.cols;
+    for (const b of this.bricks) {
+      b.w = colW - 6;
+      b.h = this.rowHeight - 6;
+      b.x = b.col * colW + 3;
+      b.y = this.topMargin + b.row * this.rowHeight + 3;
+    }
+  }
+
+  _releaseBrick(b) { b.alive = false; }
+
+  // ============================================================ INPUT
+  _bindInput() {
+    const c = this.canvas;
+    const getPos = (e) => {
+      const rect = c.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    };
+    const down = (e) => {
+      if (this.state !== GameState.AIM) return;
+      e.preventDefault();
+      this.aiming = true;
+      this._updateAim(getPos(e));
+    };
+    const move = (e) => {
+      if (!this.aiming) return;
+      e.preventDefault();
+      this._updateAim(getPos(e));
+    };
+    const up = (e) => {
+      if (!this.aiming) return;
+      this.aiming = false;
+      if (this.aimValid) this.shoot();
+    };
+    c.addEventListener('mousedown', down);
+    c.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    c.addEventListener('touchstart', down, { passive: false });
+    c.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', up);
+  }
+
+  _updateAim(pos) {
+    const originX = this.launcherX, originY = this.height - 44;
+    const dx = pos.x - originX, dy = pos.y - originY;
+    let angle = Math.atan2(dy, dx);
+    // Constrain to an upward cone so players can't aim into the launcher.
+    const minA = -Math.PI + 0.16, maxA = -0.16;
+    if (dy > -10) { this.aimValid = false; }
+    angle = Utils.clamp(angle, minA, maxA);
+    this.aimAngle = angle;
+    this.aimValid = dy < -10;
+  }
+
+  // ============================================================ SHOOTING
+  shoot() {
+    if (this.state !== GameState.AIM) return;
+    this.state = GameState.SHOOTING;
+    this.ballsToLaunch = this.ballCount;
+    this.ballsLaunchedThisTurn = 0;
+    this.ballsReturnedThisTurn = 0;
+    this.launchTimer = 0;
+    this.nextLauncherX = null;
+    this.laserShotsRemainingBalls.clear();
+  }
+
+  _launchOneBall() {
+    const b = this.ballPool.obtain();
+    b.reset();
+    b.x = this.launcherX;
+    b.y = this.height - 44;
+    b.vx = Math.cos(this.aimAngle) * this.ballSpeed;
+    b.vy = Math.sin(this.aimAngle) * this.ballSpeed;
+    b.active = true; b.launched = true; b.returned = false;
+    b.laser = this.laserNextShot;
+    b.trail = [];
+    this.audio.launch();
+    this.ballsLaunchedThisTurn++;
+  }
+
+  // ============================================================ UPDATE
+  update(dt) {
+    if (this.state === GameState.SHOOTING) {
+      this.launchTimer -= dt;
+      if (this.ballsToLaunch > 0 && this.launchTimer <= 0) {
+        this._launchOneBall();
+        this.ballsToLaunch--;
+        this.launchTimer = this.launchInterval;
+      }
+      this._stepBalls(dt);
+      if (this.ballsToLaunch === 0 && this.ballsReturnedThisTurn >= this.ballsLaunchedThisTurn && this.ballsLaunchedThisTurn > 0) {
+        this._endTurn();
+      }
+    }
+
+    if (this.comboTimer > 0) { this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0; }
+    if (this.scoreMultiplierTimer > 0) this.scoreMultiplierTimer = Math.max(0, this.scoreMultiplierTimer - dt);
+    if (this.shakeTime > 0) this.shakeTime = Math.max(0, this.shakeTime - dt);
+    if (this.dangerFlashTimer > 0) this.dangerFlashTimer -= dt;
+
+    for (const b of this.bricks) {
+      if (b.hitFlash > 0) b.hitFlash -= dt;
+      if (b.shakeT > 0) b.shakeT -= dt;
+      if (b.spawnT < 1) b.spawnT = Math.min(1, b.spawnT + dt * 6);
+    }
+
+    this.particles.update(dt);
+  }
+
+  _stepBalls(dt) {
+    const radius = 7;
+    const balls = this.ballPool.active;
+    for (let i = 0; i < balls.length; i++) {
+      const b = balls[i];
+      if (!b.active) continue;
+
+      b.trail.push({ x: b.x, y: b.y });
+      if (b.trail.length > 8) b.trail.shift();
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      // walls
+      if (b.x - radius < 0) { b.x = radius; b.vx = Math.abs(b.vx); this.audio.wallBounce(); }
+      else if (b.x + radius > this.width) { b.x = this.width - radius; b.vx = -Math.abs(b.vx); this.audio.wallBounce(); }
+      if (b.y - radius < this.topMargin - this.rowHeight * 0.5) { b.y = this.topMargin - this.rowHeight * 0.5 + radius; b.vy = Math.abs(b.vy); this.audio.wallBounce(); }
+
+      // bricks
+      this._resolveBrickCollision(b, radius);
+
+      // bottom / return
+      if (b.y - radius > this.height - 20) {
+        if (!b.returned) {
+          b.returned = true;
+          this.ballsReturnedThisTurn++;
+          this.nextLauncherX = Utils.clamp(b.x, 24, this.width - 24);
+          b.active = false;
+          this.ballPool.release(b);
+        }
+      }
+    }
+  }
+
+  _resolveBrickCollision(ball, radius) {
+    for (const brick of this.bricks) {
+      if (!brick.alive) continue;
+      const cx = Utils.clamp(ball.x, brick.x, brick.x + brick.w);
+      const cy = Utils.clamp(ball.y, brick.y, brick.y + brick.h);
+      const dx = ball.x - cx, dy = ball.y - cy;
+      const distSq = dx * dx + dy * dy;
+      if (distSq > radius * radius) continue;
+
+      const isLaser = ball.laser;
+      const laserKey = brick; // per-shot per-brick single hit tracked via Set of brick refs on the ball
+      if (isLaser) {
+        if (!ball._laserHit) ball._laserHit = new Set();
+        if (!ball._laserHit.has(brick)) {
+          ball._laserHit.add(brick);
+          this._damageBrick(brick, 1);
+        }
+        continue; // laser balls pass straight through, no bounce
+      }
+
+      // Standard bounce: reflect on the axis of least penetration.
+      const overlapX = (brick.w / 2 + radius) - Math.abs((ball.x) - (brick.x + brick.w / 2));
+      const overlapY = (brick.h / 2 + radius) - Math.abs((ball.y) - (brick.y + brick.h / 2));
+      if (overlapX < overlapY) {
+        ball.vx = ball.x < brick.x + brick.w / 2 ? -Math.abs(ball.vx) : Math.abs(ball.vx);
+        ball.x += ball.x < brick.x + brick.w / 2 ? -overlapX : overlapX;
+      } else {
+        ball.vy = ball.y < brick.y + brick.h / 2 ? -Math.abs(ball.vy) : Math.abs(ball.vy);
+        ball.y += ball.y < brick.y + brick.h / 2 ? -overlapY : overlapY;
+      }
+
+      if (brick.special === 'redirect') {
+        const jitter = (Math.random() - 0.5) * 1.1; // lively new angle
+        const speed = Math.hypot(ball.vx, ball.vy);
+        let ang = Math.atan2(ball.vy, ball.vx) + jitter;
+        ball.vx = Math.cos(ang) * speed;
+        ball.vy = Math.sin(ang) * speed;
+      }
+
+      this._damageBrick(brick, 1);
+      this.audio.brickHit(1 + brick.row * 0.03);
+      break; // one brick collision per ball per frame keeps physics stable
+    }
+  }
+
+  _damageBrick(brick, dmg) {
+    const destroyed = brick.takeHit(dmg);
+    if (destroyed) this._destroyBrick(brick);
+  }
+
+  _destroyBrick(brick) {
+    brick.alive = false;
+    const idx = this.bricks.indexOf(brick);
+    if (idx !== -1) this.bricks.splice(idx, 1);
+
+    this.combo++;
+    this.comboTimer = this.comboWindow;
+    const comboMult = 1 + Math.min(this.combo - 1, 20) * 0.12;
+    const scoreMult = this.scoreMultiplierTimer > 0 ? 2 : 1;
+    const gained = Math.round(brick.maxValue * 12 * comboMult * scoreMult);
+    this.score += gained;
+
+    const color = brick.color();
+    this.particles.burst(brick.x + brick.w / 2, brick.y + brick.h / 2, color, 16);
+    this.audio.brickDestroy(1 + brick.row * 0.02);
+    if (this.combo > 1 && this.combo % 3 === 0) this.audio.combo(this.combo);
+    if (this.combo >= 5) this._shake(0.18, 6);
+    if (navigator.vibrate && this.save.data.settings.hapticsEnabled && this.combo % 4 === 0) navigator.vibrate(12);
+
+    if (brick.special) this._triggerPowerUp(brick.special, brick);
+
+    if (brick.special === 'bomb') {
+      const neighbors = this.bricks.filter(o => o.alive && Math.abs(o.row - brick.row) <= 1 && Math.abs(o.col - brick.col) <= 1 && o !== brick);
+      for (const n of neighbors) this._damageBrick(n, 2);
+    }
+
+    this.onEvent('hud', this._hud());
+  }
+
+  _triggerPowerUp(type, brick) {
+    this.audio.powerup();
+    this.onEvent('powerup', POWERUPS[type]);
+    switch (type) {
+      case 'laser': this.laserNextShot = true; break;
+      case 'multi': this.ballCount = Math.min(6, this.ballCount + 1); break;
+      case 'freeze': this.freezeNextShift = true; break;
+      case 'scoreX': this.scoreMultiplierTimer = 8; break;
+      case 'bomb': /* handled by caller (splash on destroy) */ break;
+      case 'redirect': /* handled during collision */ break;
+    }
+  }
+
+  _shake(time, mag) { this.shakeTime = Math.max(this.shakeTime, time); this.shakeMag = mag; }
+
+  // ============================================================ TURN FLOW
+  _endTurn() {
+    this.turnIndex++;
+    this.laserNextShot = false;
+
+    if (this.launcherX !== null && this.nextLauncherX !== null) this.launcherX = this.nextLauncherX;
+
+    if (this.freezeNextShift) {
+      this.freezeNextShift = false; // row shift & spawn skipped entirely this turn
+    } else {
+      for (const b of this.bricks) b.row += 1;
+      this._spawnRow();
+    }
+    this._layoutBricks();
+
+    // Danger check
+    const inDanger = this.bricks.some(b => b.alive && b.row >= this.dangerRow - 1);
+    this.dangerFlashTimer = inDanger ? 0.9 : 0;
+    const lost = this.bricks.some(b => b.alive && b.row >= this.dangerRow);
+    if (lost) { this._gameOver(); return; }
+    if (inDanger) this.audio.danger();
+
+    // Win check (level / daily target)
+    if (this.mode === 'level' && this.score >= this.levelData.targetScore) { this._levelComplete(); return; }
+
+    this.state = GameState.AIM;
+    this.onEvent('hud', this._hud());
+  }
+
+  _gameOver() {
+    this.state = GameState.GAMEOVER;
+    let isNewHigh = false;
+    if (this.mode === 'endless') isNewHigh = this.save.setHighScoreEndless(this.score);
+    if (this.mode === 'daily') this.save.recordDailyResult(this.levelData.dateKey, this.score);
+    this.audio.gameOver();
+    this.onEvent('gameover', { score: this.score, isNewHigh, mode: this.mode });
+  }
+
+  _levelComplete() {
+    this.state = GameState.LEVELCOMPLETE;
+    const t = this.levelData.starThresholds;
+    let stars = 1;
+    if (this.score >= t[2]) stars = 3; else if (this.score >= t[1]) stars = 2; else stars = 1;
+    this.save.recordLevelComplete(this.levelData.number, stars, this.score);
+    this.save.addCoins(20 + stars * 10);
+    this.audio.levelComplete();
+    this.onEvent('levelcomplete', { score: this.score, stars, level: this.levelData.number });
+  }
+
+  pause() { if (this.state !== GameState.GAMEOVER && this.state !== GameState.LEVELCOMPLETE) { this._prePauseState = this.state; this.state = GameState.PAUSED; } }
+  resume() { if (this.state === GameState.PAUSED) this.state = this._prePauseState || GameState.AIM; }
+
+  _hud() {
+    return {
+      score: this.score,
+      combo: this.combo,
+      ballCount: this.ballCount,
+      mode: this.mode,
+      level: this.levelData && this.levelData.number,
+      targetScore: this.levelData && this.levelData.targetScore,
+      turnIndex: this.turnIndex,
+      danger: this.dangerFlashTimer > 0,
+      scoreMultActive: this.scoreMultiplierTimer > 0,
+      laserReady: this.laserNextShot
+    };
+  }
+
+  // ============================================================ RENDER
+  render() {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.clearRect(0, 0, this.width, this.height);
+
+    if (this.shakeTime > 0) {
+      const m = this.shakeMag * (this.shakeTime / 0.18);
+      ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m);
+    }
+
+    this._renderBackground(ctx);
+    this._renderDangerLine(ctx);
+    this._renderBricks(ctx);
+    this._renderBalls(ctx);
+    this.particles.render(ctx);
+    if (this.state === GameState.AIM) this._renderAim(ctx);
+    this._renderLauncher(ctx);
+
+    ctx.restore();
+  }
+
+  _renderBackground(ctx) {
+    const g = ctx.createLinearGradient(0, 0, 0, this.height);
+    g.addColorStop(0, '#0B0E1D');
+    g.addColorStop(0.55, '#0E1330');
+    g.addColorStop(1, '#141032');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    // faint aurora glow bands
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    const t = performance.now() / 4000;
+    for (let i = 0; i < 3; i++) {
+      const gg = ctx.createRadialGradient(
+        this.width * (0.2 + i * 0.3), this.height * 0.15 + Math.sin(t + i) * 20, 10,
+        this.width * (0.2 + i * 0.3), this.height * 0.15, 260
+      );
+      gg.addColorStop(0, i === 0 ? '#3AF2C7' : i === 1 ? '#8C6BFF' : '#FF6BD6');
+      gg.addColorStop(1, 'transparent');
+      ctx.fillStyle = gg;
+      ctx.fillRect(0, 0, this.width, this.height * 0.5);
+    }
+    ctx.restore();
+  }
+
+  _renderDangerLine(ctx) {
+    const y = this.topMargin + (this.dangerRow) * this.rowHeight;
+    ctx.save();
+    const alpha = this.dangerFlashTimer > 0 ? 0.5 + 0.4 * Math.sin(performance.now() / 60) : 0.28;
+    ctx.strokeStyle = `rgba(255,79,94,${alpha})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.width, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  _renderBricks(ctx) {
+    for (const b of this.bricks) {
+      if (!b.alive) continue;
+      const scale = 0.6 + 0.4 * b.spawnT;
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      const shakeOff = b.shakeT > 0 ? (Math.random() - 0.5) * 3 : 0;
+      ctx.save();
+      ctx.translate(cx + shakeOff, cy);
+      ctx.scale(scale, scale);
+      const w = b.w, h = b.h;
+      const color = b.color();
+      const flashing = b.hitFlash > 0;
+
+      ctx.shadowColor = color;
+      ctx.shadowBlur = flashing ? 22 : 10;
+      const grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+      grad.addColorStop(0, flashing ? '#ffffff' : shade(color, 18));
+      grad.addColorStop(1, color);
+      ctx.fillStyle = grad;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 8);
+      ctx.fill();
+
+      if (b.special) {
+        ctx.shadowBlur = 14;
+        ctx.strokeStyle = POWERUPS[b.special].color;
+        ctx.lineWidth = 2.5;
+        roundRect(ctx, -w / 2 + 2, -h / 2 + 2, w - 4, h - 4, 6);
+        ctx.stroke();
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(9,10,22,0.85)';
+      ctx.font = `700 ${Math.round(h * 0.42)}px 'Space Grotesk', system-ui, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(b.value), 0, 1);
+      ctx.restore();
+    }
+  }
+
+  _renderBalls(ctx) {
+    for (const b of this.ballPool.active) {
+      if (!b.active) continue;
+      for (let i = 0; i < b.trail.length; i++) {
+        const p = b.trail[i];
+        const a = (i / b.trail.length) * 0.35;
+        ctx.beginPath();
+        ctx.fillStyle = b.laser ? `rgba(58,242,199,${a})` : `rgba(140,107,255,${a})`;
+        ctx.arc(p.x, p.y, 5 * (i / b.trail.length), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.save();
+      ctx.shadowColor = b.laser ? '#3AF2C7' : '#EAF0FF';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = b.laser ? '#3AF2C7' : '#F4F7FF';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  _renderAim(ctx) {
+    const originX = this.launcherX, originY = this.height - 44;
+    ctx.save();
+    ctx.globalAlpha = this.aimValid ? 0.9 : 0.25;
+    ctx.strokeStyle = '#8C6BFF';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([2, 10]);
+    ctx.lineCap = 'round';
+
+    let x = originX, y = originY;
+    let vx = Math.cos(this.aimAngle), vy = Math.sin(this.aimAngle);
+    const maxBounces = 3;
+    let bounces = 0;
+    let remaining = this.height * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    while (remaining > 0 && bounces <= maxBounces) {
+      // time to hit left/right wall or top
+      let tX = Infinity;
+      if (vx > 0) tX = (this.width - x) / vx; else if (vx < 0) tX = (0 - x) / vx;
+      let tY = Infinity;
+      const topY = this.topMargin - this.rowHeight * 0.5;
+      if (vy < 0) tY = (topY - y) / vy;
+      const t = Math.min(tX, tY, remaining);
+      x += vx * t; y += vy * t;
+      ctx.lineTo(x, y);
+      remaining -= t;
+      if (t === tX && tX <= tY) { vx = -vx; bounces++; }
+      else if (t === tY) { vy = -vy; bounces++; }
+      else break;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.fillStyle = '#8C6BFF';
+    ctx.globalAlpha = this.aimValid ? 0.9 : 0.3;
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  _renderLauncher(ctx) {
+    const x = this.launcherX, y = this.height - 44;
+    ctx.save();
+    ctx.shadowColor = '#3AF2C7';
+    ctx.shadowBlur = 16;
+    const g = ctx.createRadialGradient(x, y, 2, x, y, 16);
+    g.addColorStop(0, '#EAF0FF');
+    g.addColorStop(1, '#3AF2C7');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    if (this.laserNextShot) {
+      ctx.save();
+      ctx.fillStyle = '#3AF2C7';
+      ctx.font = "700 11px 'Space Grotesk', system-ui, sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('LASER READY', x, y + 26);
+      ctx.restore();
+    }
+  }
+
+  destroy() {
+    this.stop();
+    window.removeEventListener('resize', this._resize);
+  }
+}
+
+// --- small canvas helpers ---
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function shade(hex, percent) {
+  const num = parseInt(hex.slice(1), 16);
+  let r = (num >> 16) + Math.round(255 * percent / 100);
+  let g = ((num >> 8) & 0xff) + Math.round(255 * percent / 100);
+  let b = (num & 0xff) + Math.round(255 * percent / 100);
+  r = Utils.clamp(r, 0, 255); g = Utils.clamp(g, 0, 255); b = Utils.clamp(b, 0, 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ============================================================
+   Ricochet Nova — ui.js
+   Connects DOM screens/overlays to the Game engine. Handles
+   screen navigation, HUD updates, level select grid, settings,
+   and first-run tutorial gating.
+   ============================================================ */
+'use strict';
+
+class UIManager {
+  constructor({ save, audio }) {
+    this.save = save;
+    this.audio = audio;
+    this.game = null;
+    this.pendingMode = null; // mode chosen before tutorial gate
+    this.pendingLevel = 1;
+
+    this.$ = (id) => document.getElementById(id);
+    this._cacheEls();
+    this._bindGlobalButtonClickSound();
+    this._bindMenu();
+    this._bindGameOverlays();
+    this._bindSettings();
+    this._bindTutorial();
+
+    this._refreshMenuStats();
+    this._applySettingsToUI();
+  }
+
+  _cacheEls() {
+    this.screens = {
+      splash: this.$('screen-splash'),
+      menu: this.$('screen-menu'),
+      levels: this.$('screen-levels'),
+      game: this.$('screen-game'),
+      settings: this.$('screen-settings')
+    };
+  }
+
+  showScreen(name) {
+    Object.values(this.screens).forEach(s => s.classList.remove('active'));
+    this.screens[name].classList.add('active');
+  }
+
+  _bindGlobalButtonClickSound() {
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn, .icon-btn, .toggle');
+      if (btn) this.audio.buttonClick();
+    }, true);
+  }
+
+  // ============================================================ MENU
+  _bindMenu() {
+    this.$('btnLevelMode').onclick = () => { this._buildLevelGrid(); this.showScreen('levels'); };
+    this.$('btnEndless').onclick = () => this._requestStart('endless');
+    this.$('btnDaily').onclick = () => this._requestStart('daily');
+    this.$('btnSettings').onclick = () => { this._settingsReturnTo = 'menu'; this.showScreen('settings'); };
+    this.$('btnHowTo').onclick = () => { this._showTutorialOverlay(true); };
+    this._refreshDailyStatus();
+  }
+
+  _refreshMenuStats() {
+    this.$('statHigh').textContent = Utils.formatNumber(this.save.data.highScoreEndless);
+    this.$('statCoins').textContent = Utils.formatNumber(this.save.data.coins);
+  }
+
+  _refreshDailyStatus() {
+    const played = this.save.hasDailyPlayedToday(Utils.todayKey());
+    this.$('dailyStatus').textContent = played ? `best ${Utils.formatNumber(this.save.data.daily.bestScore)} ›` : 'new today ›';
+  }
+
+  // ============================================================ LEVEL SELECT
+  _buildLevelGrid() {
+    const grid = this.$('levelGrid');
+    grid.innerHTML = '';
+    const TOTAL_LEVELS = 100;
+    const currentLevel = this.save.data.currentLevel;
+    for (let i = 1; i <= TOTAL_LEVELS; i++) {
+      const completed = this.save.data.completedLevels[i];
+      const locked = i > currentLevel;
+      const cell = document.createElement('div');
+      cell.className = 'level-cell' + (locked ? ' locked' : '') + (i === currentLevel ? ' current' : '');
+      const stars = completed ? completed.stars : 0;
+      cell.innerHTML = `<div>${i}</div><div class="stars">${locked ? '' : '★'.repeat(stars) + '☆'.repeat(3 - stars)}</div>`;
+      if (!locked) cell.onclick = () => this._requestStart('level', i);
+      grid.appendChild(cell);
+    }
+    this.$('btnLevelsBack').onclick = () => this.showScreen('menu');
+  }
+
+  // ============================================================ START / TUTORIAL GATE
+  _requestStart(mode, levelNumber = 1) {
+    this.audio.unlock();
+    this.pendingMode = mode; this.pendingLevel = levelNumber;
+    if (!this.save.data.tutorialSeen) {
+      this._showTutorialOverlay(false);
+    } else {
+      this._startGame(mode, levelNumber);
+    }
+  }
+
+  _startGame(mode, levelNumber) {
+    this.showScreen('game');
+    this.$('hudTargetWrap').style.display = mode === 'level' ? 'block' : 'none';
+    this.$('hudModeLabel').textContent = mode === 'level' ? `Level ${levelNumber}` : mode === 'daily' ? 'Daily Challenge' : 'Endless Mode';
+    this.game.startMode(mode, levelNumber);
+    this._hideAllGameOverlays();
+  }
+
+  // ============================================================ TUTORIAL
+  _bindTutorial() {
+    this.$('btnTutorialGo').onclick = () => {
+      this.save.data.tutorialSeen = true; this.save.save();
+      this._hideOverlay('overlayTutorial');
+      if (this._tutorialStandalone) { this._tutorialStandalone = false; this.showScreen('menu'); return; }
+      this._startGame(this.pendingMode, this.pendingLevel);
+    };
+  }
+  _showTutorialOverlay(standalone) {
+    this._tutorialStandalone = standalone;
+    // The tutorial overlay lives inside #screen-game, so that screen must be
+    // active for the overlay to be visible at all — even when just launched
+    // from the "How to play" menu button before any mode has been picked.
+    this.showScreen('game');
+    this._showOverlay('overlayTutorial');
+  }
+
+  // ============================================================ IN-GAME OVERLAYS
+  _bindGameOverlays() {
+    this.$('btnPause').onclick = () => { this.game.pause(); this._showOverlay('overlayPause'); };
+    this.$('btnResume').onclick = () => { this.game.resume(); this._hideOverlay('overlayPause'); };
+    this.$('btnRestartFromPause').onclick = () => {
+      this._hideOverlay('overlayPause');
+      this._startGame(this.game.mode, this.game.levelData ? this.game.levelData.number : 1);
+    };
+    this.$('btnPauseSettings').onclick = () => { this._settingsReturnTo = 'pause'; this.showScreen('settings'); };
+    this.$('btnQuitToMenu').onclick = () => { this._hideAllGameOverlays(); this.game.stop(); this._refreshMenuStats(); this._refreshDailyStatus(); this.showScreen('menu'); };
+
+    this.$('btnPlayAgain').onclick = () => this._startGame(this.game.mode, this.game.levelData ? this.game.levelData.number : 1);
+    this.$('btnGameOverMenu').onclick = () => { this._hideAllGameOverlays(); this._refreshMenuStats(); this._refreshDailyStatus(); this.showScreen('menu'); };
+
+    this.$('btnNextLevel').onclick = () => this._startGame('level', this.game.levelData.number + 1);
+    this.$('btnLevelMenu').onclick = () => { this._hideAllGameOverlays(); this._buildLevelGrid(); this.showScreen('levels'); };
+  }
+
+  _showOverlay(id) { this.$(id).classList.add('active'); }
+  _hideOverlay(id) { this.$(id).classList.remove('active'); }
+  _hideAllGameOverlays() {
+    ['overlayPause', 'overlayGameOver', 'overlayLevelComplete', 'overlayTutorial'].forEach(id => this._hideOverlay(id));
+  }
+
+  // ============================================================ HUD + EVENTS FROM GAME
+  onGameEvent(name, payload) {
+    if (name === 'hud') this._updateHud(payload);
+    else if (name === 'powerup') this._flashPowerup(payload);
+    else if (name === 'gameover') this._onGameOver(payload);
+    else if (name === 'levelcomplete') this._onLevelComplete(payload);
+  }
+
+  _updateHud(hud) {
+    this.$('hudScore').textContent = Utils.formatNumber(hud.score);
+    this.$('hudCombo').textContent = hud.combo > 1 ? `x${hud.combo} combo` : '';
+    if (hud.mode === 'level' && hud.targetScore) {
+      this.$('hudTarget').textContent = Utils.formatNumber(hud.targetScore);
+      const pct = Utils.clamp((hud.score / hud.targetScore) * 100, 0, 100);
+      this.$('hudProgressFill').style.width = pct + '%';
+    }
+    const badges = [];
+    if (hud.laserReady) badges.push('<span class="badge laser">LASER</span>');
+    if (hud.scoreMultActive) badges.push('<span class="badge scoreX">x2 SCORE</span>');
+    if (hud.ballCount > 1) badges.push(`<span class="badge">x${hud.ballCount} balls</span>`);
+    this.$('hudBadges').innerHTML = badges.join('');
+  }
+
+  _flashPowerup(def) {
+    // Lightweight toast via combo label reuse to avoid extra DOM churn.
+    const el = this.$('hudCombo');
+    const prev = el.textContent;
+    el.textContent = `${def.name}!`;
+    el.style.color = def.color;
+    setTimeout(() => { el.style.color = ''; }, 900);
+  }
+
+  _onGameOver(payload) {
+    this.$('gameOverScore').textContent = Utils.formatNumber(payload.score);
+    this.$('gameOverBest').style.display = payload.isNewHigh ? 'block' : 'none';
+    this.$('gameOverSub').textContent = payload.mode === 'daily'
+      ? 'Come back tomorrow for a new board.'
+      : 'The bricks reached the danger line.';
+    this._showOverlay('overlayGameOver');
+  }
+
+  _onLevelComplete(payload) {
+    const starsHtml = [1, 2, 3].map(i => `<span class="${i <= payload.stars ? 'on' : ''}">★</span>`).join(' ');
+    this.$('starsRow').innerHTML = starsHtml;
+    this.$('levelCompleteScore').textContent = Utils.formatNumber(payload.score);
+    this.$('btnNextLevel').style.display = payload.level < 100 ? 'block' : 'none';
+    this._showOverlay('overlayLevelComplete');
+  }
+
+  // ============================================================ SETTINGS
+  _bindSettings() {
+    this.$('btnSettingsBack').onclick = () => {
+      const dest = this._settingsReturnTo || 'menu';
+      if (dest === 'pause') { this.showScreen('game'); this._showOverlay('overlayPause'); }
+      else this.showScreen('menu');
+    };
+    this.$('sfxSlider').oninput = (e) => { const v = parseFloat(e.target.value); this.audio.setSfxVolume(v); this.save.updateSettings({ sfxVolume: v }); };
+    this.$('musicSlider').oninput = (e) => { const v = parseFloat(e.target.value); this.audio.setMusicVolume(v); this.save.updateSettings({ musicVolume: v }); };
+    this.$('toggleMute').onclick = () => {
+      const on = !this.save.data.settings.muted;
+      this.save.updateSettings({ muted: on });
+      this.audio.setMuted(on);
+      this.$('toggleMute').classList.toggle('on', on);
+    };
+    this.$('toggleHaptics').onclick = () => {
+      const on = !this.save.data.settings.hapticsEnabled;
+      this.save.updateSettings({ hapticsEnabled: on });
+      this.$('toggleHaptics').classList.toggle('on', on);
+    };
+  }
+
+  _applySettingsToUI() {
+    const s = this.save.data.settings;
+    this.$('sfxSlider').value = s.sfxVolume;
+    this.$('musicSlider').value = s.musicVolume;
+    this.$('toggleMute').classList.toggle('on', s.muted);
+    this.$('toggleHaptics').classList.toggle('on', s.hapticsEnabled);
+  }
+}
+
+/* ============================================================
+   Ricochet Nova — main.js
+   Boots the app: splash sequence, then wires the Save manager,
+   Audio manager, Game engine, and UIManager together.
+   ============================================================ */
+'use strict';
+
+(function boot() {
+  const save = new SaveManager();
+  const audio = new AudioManager();
+
+  const canvas = document.getElementById('gameCanvas');
+  const ui = new UIManager({ save, audio });
+
+  const game = new Game(canvas, {
+    audio, save,
+    onEvent: (name, payload) => ui.onGameEvent(name, payload)
+  });
+  ui.game = game;
+
+  // Apply saved audio settings immediately.
+  audio.setSfxVolume(save.data.settings.sfxVolume);
+  audio.setMusicVolume(save.data.settings.musicVolume);
+  audio.setMuted(save.data.settings.muted);
+
+  // Unlock WebAudio on first user gesture (required by mobile browsers).
+  const unlockOnce = () => {
+    audio.unlock();
+    audio.startMusic();
+    window.removeEventListener('pointerdown', unlockOnce);
+    window.removeEventListener('touchstart', unlockOnce);
+  };
+  window.addEventListener('pointerdown', unlockOnce, { once: true });
+  window.addEventListener('touchstart', unlockOnce, { once: true });
+
+  // Keep the canvas sized correctly, including when the game screen becomes visible.
+  const resizeGame = () => game.resize();
+  window.addEventListener('resize', resizeGame);
+  window.addEventListener('orientationchange', () => setTimeout(resizeGame, 60));
+
+  const origStartGame = ui._startGame.bind(ui);
+  ui._startGame = (mode, levelNumber) => { origStartGame(mode, levelNumber); requestAnimationFrame(resizeGame); };
+
+  // --- Splash sequence -------------------------------------------------
+  const fill = document.getElementById('splashFill');
+  let p = 0;
+  const splashTimer = setInterval(() => {
+    p = Math.min(100, p + 8 + Math.random() * 10);
+    fill.style.width = p + '%';
+    if (p >= 100) {
+      clearInterval(splashTimer);
+      setTimeout(() => {
+        game.resize();
+        ui.showScreen('menu');
+      }, 180);
+    }
+  }, 70);
+
+  // --- Global error guard: keep the app alive & log for diagnosis ------
+  window.addEventListener('error', (e) => {
+    console.error('[RicochetNova] runtime error:', e.error || e.message);
+  });
+
+  // Expose for quick manual testing / debugging from a dev console.
+  window.__ricochetNova = { save, audio, game, ui };
+  window.LevelGen = LevelGen;
+  window.POWERUPS = POWERUPS;
+  window.Utils = Utils;
+  window.SaveManager = SaveManager;
+})();
+
+</script>
+</body>
+</html>
