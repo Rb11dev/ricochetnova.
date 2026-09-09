@@ -6,6 +6,13 @@
 <title>Ricochet Nova</title>
 <meta name="theme-color" content="#0B0E1D" />
 <meta name="description" content="Ricochet Nova — an original neon brick-breaking puzzle game. Swipe to aim, shatter numbered bricks, chain combos, and survive the descent." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ricochet Nova" />
+<meta name="mobile-web-app-capable" content="yes" />
 <style>
 /* ============================================================
    Ricochet Nova — style.css
@@ -155,12 +162,32 @@ html, body {
 .hud-combo { font-size: 13px; color: var(--magenta); font-weight:600; height:16px; }
 .hud-pause-btn { pointer-events:auto; }
 .hud-target { font-size: 11px; color: var(--text-lo); }
+.hud-coins { font-size: 13px; color: var(--amber); font-weight:600; background: var(--panel); border:1px solid var(--panel-border); border-radius:999px; padding:4px 10px; display:flex; align-items:center; gap:4px; }
 .hud-progress { width: 90px; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow:hidden; margin-top:2px;}
 .hud-progress-fill { height:100%; background: linear-gradient(90deg, var(--teal), var(--magenta)); width:0%; }
 .hud-badges { display:flex; gap:6px; margin-top: 4px; }
 .badge { font-size: 10px; padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,0.08); }
 .badge.laser { color: var(--teal); border: 1px solid var(--teal); }
 .badge.scoreX { color: var(--magenta); border: 1px solid var(--magenta); }
+
+/* ---------- Toasts (coin/orb/powerup pickups) ---------- */
+.toast-stack {
+  position: absolute; top: 92px; left: 50%; transform: translateX(-50%);
+  z-index: 6; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+}
+.toast {
+  background: rgba(15,17,36,0.88); border: 1px solid var(--panel-border);
+  border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600;
+  color: var(--text-hi); white-space: nowrap;
+  animation: toastPop 1.6s ease forwards;
+}
+@keyframes toastPop {
+  0% { opacity: 0; transform: translateY(-6px) scale(0.9); }
+  12% { opacity: 1; transform: translateY(0) scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+}
 
 #gameCanvasWrap { position: absolute; inset: 0; }
 #gameCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -208,6 +235,54 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
 .small-note { font-size: 11px; color: var(--text-lo); text-align:center; margin-top: 10px; line-height:1.5; }
 .link-btn { background: none; border: none; color: var(--blue); font-size: 12px; cursor: pointer; text-decoration: underline; }
 
+/* ---------- Reward notification dot ---------- */
+.reward-dot {
+  position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--magenta); box-shadow: 0 0 8px var(--magenta);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+@keyframes dotPulse { 0%,100% { transform: scale(1); opacity:1; } 50% { transform: scale(1.3); opacity:0.7; } }
+
+/* ---------- Upgrade Shop ---------- */
+.shop-list { display: flex; flex-direction: column; gap: 12px; flex: 1; padding-bottom: 16px; }
+.shop-card {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.shop-card-top { display: flex; align-items: center; gap: 12px; }
+.shop-card-icon {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  background: linear-gradient(135deg, rgba(58,242,199,0.18), rgba(140,107,255,0.18));
+  border: 1px solid var(--panel-border);
+}
+.shop-card-info { flex: 1; min-width: 0; }
+.shop-card-name { font-family:'Space Grotesk',sans-serif; font-weight: 700; font-size: 15px; }
+.shop-card-desc { font-size: 12px; color: var(--text-lo); margin-top: 2px; }
+.shop-card-levels { display: flex; gap: 4px; margin-top: 2px; }
+.shop-pip { width: 16px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); }
+.shop-pip.filled { background: linear-gradient(90deg, var(--teal), var(--violet)); }
+.shop-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.shop-card-effect { font-size: 11px; color: var(--teal); }
+.shop-buy-btn {
+  border: none; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 13px;
+  font-family: 'Space Grotesk', sans-serif; cursor: pointer;
+  background: linear-gradient(135deg, var(--teal), var(--violet)); color: #0A0B17;
+}
+.shop-buy-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-lo); cursor: default; }
+.shop-buy-btn.maxed { background: rgba(255,140,75,0.18); color: var(--amber); }
+
+/* ---------- Daily reward ladder ---------- */
+.reward-ladder { display: flex; gap: 6px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
+.reward-day {
+  width: 40px; height: 48px; border-radius: 10px; border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.04); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size: 10px; color: var(--text-lo); gap: 2px;
+}
+.reward-day .amt { font-size: 11px; font-weight: 700; color: var(--text-hi); }
+.reward-day.today { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(58,242,199,0.3); background: rgba(58,242,199,0.08); }
+.reward-day.claimed { opacity: 0.45; }
+
 </style>
 </head>
 <body>
@@ -236,14 +311,18 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
     </div>
 
     <div class="menu-buttons">
-      <button class="btn btn-primary" id="btnLevelMode">Level Mode <small>100 stages ›</small></button>
+      <button class="btn btn-primary" id="btnLevelMode">Level Mode <small>100 stages, boss every 10th ›</small></button>
       <button class="btn btn-secondary" id="btnEndless">Endless Mode <small>chase a high score ›</small></button>
       <button class="btn btn-secondary" id="btnDaily">Daily Challenge <small id="dailyStatus">new today ›</small></button>
+      <button class="btn btn-secondary" id="btnShop">Upgrade Shop <small>spend your coins ›</small></button>
     </div>
 
     <div class="menu-footer">
       <button class="icon-btn" id="btnSettings" title="Settings">⚙️</button>
       <button class="icon-btn" id="btnHowTo" title="How to play">❔</button>
+      <button class="icon-btn" id="btnDailyReward" title="Daily reward" style="position:relative;">
+        🎁<span class="reward-dot" id="rewardDot" style="display:none;"></span>
+      </button>
     </div>
   </section>
 
@@ -270,12 +349,15 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
       </div>
       <div class="hud-right">
         <button class="icon-btn hud-pause-btn" id="btnPause">⏸</button>
+        <div class="hud-coins">🪙 <b id="hudCoins">0</b></div>
         <div class="hud-target" id="hudTargetWrap" style="display:none;">
           Target <b id="hudTarget">0</b>
           <div class="hud-progress"><div class="hud-progress-fill" id="hudProgressFill"></div></div>
         </div>
       </div>
     </div>
+
+    <div class="toast-stack" id="toastStack"></div>
 
     <!-- Pause overlay -->
     <div class="overlay" id="overlayPause">
@@ -285,6 +367,7 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
         <div class="overlay-buttons">
           <button class="btn btn-primary" id="btnResume">Resume</button>
           <button class="btn btn-secondary" id="btnRestartFromPause">Restart</button>
+          <button class="btn btn-secondary" id="btnPauseShop">Upgrade Shop</button>
           <button class="btn btn-secondary" id="btnPauseSettings">Settings</button>
           <button class="btn btn-secondary" id="btnQuitToMenu">Quit to Menu</button>
         </div>
@@ -359,6 +442,10 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
         <label>Vibration</label>
         <div class="toggle" id="toggleHaptics"><div class="knob"></div></div>
       </div>
+      <div class="setting-row">
+        <label>Reduce Motion</label>
+        <div class="toggle" id="toggleReduceMotion"><div class="knob"></div></div>
+      </div>
       <div class="setting-row" style="border-bottom:none; flex-direction:column; align-items:flex-start; gap:6px;">
         <label>About</label>
         <div class="small-note" style="text-align:left; margin:0;">
@@ -369,6 +456,28 @@ input[type=range] { width: 140px; accent-color: var(--teal); }
       </div>
     </div>
   </section>
+
+  <!-- ============ UPGRADE SHOP ============ -->
+  <section class="screen" id="screen-shop">
+    <div class="top-bar">
+      <button class="icon-btn" id="btnShopBack">←</button>
+      <div class="panel-title">Upgrade Shop</div>
+      <div class="stat-pill">🪙 <b id="shopCoins">0</b></div>
+    </div>
+    <div class="scroll shop-list" id="shopList"></div>
+  </section>
+
+  <!-- Daily login reward overlay — sits above every screen inside the phone frame -->
+  <div class="overlay" id="overlayDailyReward">
+    <div class="overlay-card">
+      <div class="overlay-title">Daily Reward</div>
+      <div class="overlay-sub" id="dailyRewardSub">Come back each day for a bigger bonus.</div>
+      <div class="reward-ladder" id="rewardLadder"></div>
+      <div class="overlay-buttons">
+        <button class="btn btn-primary" id="btnClaimDaily">Claim Reward</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 </div>
@@ -558,6 +667,23 @@ class AudioManager {
   }
   danger() { this._tone({ freq: 150, type: 'square', duration: 0.2, gain: 0.15 }); }
 
+  // --- new: economy, orbs, and boss sounds -------------------------------
+  coinCollect() { this._tone({ freq: 880, glideTo: 1320, type: 'square', duration: 0.07, gain: 0.14 }); }
+  orbCollect() {
+    [660, 880, 1100, 1320].forEach((f, i) => this._tone({ freq: f, type: 'sine', duration: 0.16, gain: 0.18, delay: i * 0.045 }));
+  }
+  bossHit() { this._tone({ freq: 180, glideTo: 90, type: 'sawtooth', duration: 0.1, gain: 0.2 }); this._noise({ duration: 0.06, gain: 0.1, filterFreq: 1200 }); }
+  bossDefeat() {
+    [220, 277, 330, 440, 554, 659].forEach((f, i) => this._tone({ freq: f, type: 'sine', duration: 0.3, gain: 0.22, delay: i * 0.1 }));
+    this._noise({ duration: 0.4, gain: 0.15, filterFreq: 4000 });
+  }
+  bossAppear() { this._tone({ freq: 100, glideTo: 60, type: 'sawtooth', duration: 0.6, gain: 0.2 }); }
+  shopPurchase() { this._tone({ freq: 500, glideTo: 800, type: 'triangle', duration: 0.14, gain: 0.2 }); }
+  shopError() { this._tone({ freq: 220, type: 'square', duration: 0.08, gain: 0.12 }); }
+  dailyClaim() {
+    [440, 587, 740, 880].forEach((f, i) => this._tone({ freq: f, type: 'triangle', duration: 0.2, gain: 0.2, delay: i * 0.08 }));
+  }
+
   // --- ambient background pad, fully synthesized & loop-free (drifting drone) --
   startMusic() {
     if (!this.ctx || this.musicPlaying) return;
@@ -609,12 +735,14 @@ class SaveManager {
       currentLevel: 1,
       completedLevels: {},      // { [levelNumber]: { stars, score } }
       coins: 0,
+      lifetimeCoins: 0,
       achievements: {},         // { [id]: true }
       settings: {
         sfxVolume: 0.8,
         musicVolume: 0.4,
         muted: false,
         hapticsEnabled: true,
+        reduceMotion: false,
         selectedSkin: 'aurora'
       },
       daily: {
@@ -623,6 +751,18 @@ class SaveManager {
         bestScoreKey: null,
         bestScore: 0
       },
+      dailyReward: {
+        lastClaimedKey: null,   // 'YYYY-MM-DD'
+        streak: 0
+      },
+      upgrades: {
+        power: 0,
+        speed: 0,
+        startBalls: 0,
+        comboWindow: 0,
+        coinMagnet: 0
+      },
+      bossesDefeated: {},       // { [levelNumber]: true }
       unlockedSkins: ['aurora'],
       tutorialSeen: false
     };
@@ -633,9 +773,13 @@ class SaveManager {
       const raw = localStorage.getItem(this.KEY);
       if (!raw) return this._defaults();
       const parsed = JSON.parse(raw);
-      return Object.assign(this._defaults(), parsed, {
-        settings: Object.assign(this._defaults().settings, parsed.settings || {}),
-        daily: Object.assign(this._defaults().daily, parsed.daily || {})
+      const d = this._defaults();
+      return Object.assign(d, parsed, {
+        settings: Object.assign(d.settings, parsed.settings || {}),
+        daily: Object.assign(d.daily, parsed.daily || {}),
+        dailyReward: Object.assign(d.dailyReward, parsed.dailyReward || {}),
+        upgrades: Object.assign(d.upgrades, parsed.upgrades || {}),
+        bossesDefeated: Object.assign(d.bossesDefeated, parsed.bossesDefeated || {})
       });
     } catch (e) {
       console.warn('Save load failed, using defaults', e);
@@ -666,7 +810,45 @@ class SaveManager {
     this.save();
   }
 
-  addCoins(n) { this.data.coins = Math.max(0, this.data.coins + n); this.save(); }
+  markBossDefeated(levelNum) {
+    if (!this.data.bossesDefeated[levelNum]) { this.data.bossesDefeated[levelNum] = true; this.save(); return true; }
+    return false;
+  }
+
+  addCoins(n) {
+    const delta = Math.round(n);
+    this.data.coins = Math.max(0, this.data.coins + delta);
+    if (delta > 0) this.data.lifetimeCoins += delta;
+    this.save();
+  }
+
+  spendCoins(n) {
+    if (this.data.coins < n) return false;
+    this.data.coins -= n;
+    this.save();
+    return true;
+  }
+
+  // --- upgrade shop ---
+  getUpgradeLevel(id) { return this.data.upgrades[id] || 0; }
+  setUpgradeLevel(id, level) { this.data.upgrades[id] = level; this.save(); }
+
+  // --- daily login reward (separate from the Daily Challenge board) ---
+  isDailyRewardAvailable(dateKey) { return this.data.dailyReward.lastClaimedKey !== dateKey; }
+  claimDailyReward(dateKey) {
+    const y = this.data.dailyReward.lastClaimedKey;
+    const isConsecutive = y && this._isYesterday(y, dateKey);
+    this.data.dailyReward.streak = isConsecutive ? Math.min(7, this.data.dailyReward.streak + 1) : 1;
+    this.data.dailyReward.lastClaimedKey = dateKey;
+    this.save();
+    return this.data.dailyReward.streak;
+  }
+  _isYesterday(prevKey, todayKeyStr) {
+    const prev = new Date(prevKey + 'T00:00:00');
+    const today = new Date(todayKeyStr + 'T00:00:00');
+    const diffDays = Math.round((today - prev) / 86400000);
+    return diffDays === 1;
+  }
 
   unlockAchievement(id) {
     if (!this.data.achievements[id]) { this.data.achievements[id] = true; this.save(); return true; }
@@ -837,10 +1019,32 @@ const LevelGen = (() => {
   // --- LEVEL MODE ---------------------------------------------------------
   // 100+ generated levels. Each level is fully deterministic given its
   // number, so it can be regenerated identically at any time (no need to
-  // store full layouts in the save file).
+  // store full layouts in the save file). Every 10th level is a Boss Level.
   function generateLevel(levelNumber) {
     const rng = Utils.mulberry32(Utils.hashStringToSeed('level-' + levelNumber));
     const difficulty = Math.min(40, Math.floor(levelNumber / 2));
+    const isBoss = levelNumber % 10 === 0;
+
+    if (isBoss) {
+      const bossIndex = Math.floor(levelNumber / 10) - 1;
+      const name = BOSS_NAMES[bossIndex % BOSS_NAMES.length];
+      const maxHp = Math.round(60 + levelNumber * 14 + difficulty * 6);
+      // A couple of light filler rows beneath the boss keep the board from
+      // feeling empty without overshadowing the boss fight itself.
+      const rows = [];
+      const fillerRows = 2;
+      for (let r = 0; r < fillerRows; r++) rows.push(buildRow(rng, difficulty * 0.35, r));
+      return {
+        mode: 'level', number: levelNumber, seed: 'level-' + levelNumber, cols: COLS,
+        rows, difficultyStep: 0.3 + difficulty * 0.015,
+        isBoss: true, bossName: name, bossMaxHp: maxHp,
+        targetScore: Math.round(500 * levelNumber), // shown as a secondary stat only
+        starThresholds: [0, 0, 0],
+        ballCount: 1, turnsBudget: 20 + Math.floor(levelNumber / 5),
+        rng
+      };
+    }
+
     const initialRows = Math.min(8, 3 + Math.floor(levelNumber / 12));
     const rows = [];
     for (let r = 0; r < initialRows; r++) rows.push(buildRow(rng, difficulty * (0.5 + r * 0.1), r));
@@ -856,6 +1060,7 @@ const LevelGen = (() => {
       cols: COLS,
       rows,
       difficultyStep: 0.35 + difficulty * 0.02,
+      isBoss: false,
       targetScore,
       starThresholds: [Math.round(targetScore * 0.5), targetScore, Math.round(targetScore * 1.6)],
       ballCount,
@@ -939,6 +1144,141 @@ class Brick {
   }
 }
 
+// --- Lucky Orb -------------------------------------------------------------
+// A rare, independently-drifting collectible (not part of the brick grid).
+// Touching it with a ball grants a random bonus reward.
+const ORB_REWARDS = [
+  { id: 'coins', label: 'Coins', weight: 55 },
+  { id: 'bigCoins', label: 'Coin Cache', weight: 15 },
+  { id: 'score', label: 'Score Burst', weight: 20 },
+  { id: 'multiball', label: 'Free Multi Ball', weight: 10 }
+];
+
+class LuckyOrb {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = 0; this.y = 0; this.vy = 40; this.baseX = 0;
+    this.radius = 13; this.age = 0; this.active = false;
+    this.collected = false;
+    this.bobPhase = Math.random() * Math.PI * 2;
+  }
+  static rollReward(rng) {
+    const total = ORB_REWARDS.reduce((s, r) => s + r.weight, 0);
+    let t = (rng ? rng() : Math.random()) * total;
+    for (const r of ORB_REWARDS) { if (t < r.weight) return r; t -= r.weight; }
+    return ORB_REWARDS[0];
+  }
+}
+
+// --- Boss --------------------------------------------------------------
+// Appears every 10th level in Level Mode: a wide, tough, multi-hit target
+// with its own health bar, spanning the full board width.
+const BOSS_NAMES = ['Voidmaw', 'Prism Warden', 'Nullbrick Colossus', 'The Static King', 'Echo Sentinel', 'Umbral Core', 'Glass Titan', 'Rift Warden', 'Cinderglass', 'Aurabound'];
+
+class Boss {
+  constructor() { this.reset(); }
+  reset() {
+    this.row = 0; this.x = 0; this.y = 0; this.w = 0; this.h = 0;
+    this.hp = 1; this.maxHp = 1; this.name = 'Boss';
+    this.alive = false; this.hitFlash = 0; this.shakeT = 0; this.spawnT = 0;
+    this.enrageT = 0;
+  }
+  takeHit(dmg) {
+    this.hp = Math.max(0, this.hp - dmg);
+    this.hitFlash = 0.1;
+    this.shakeT = 0.12;
+    return this.hp <= 0;
+  }
+}
+
+/* ============================================================
+   Ricochet Nova — shop.js
+   Permanent, coin-purchased upgrades. Pure data + small pure
+   functions — the actual gameplay effects are applied in
+   game.js (startMode reads these via Shop.getEffective*).
+   ============================================================ */
+'use strict';
+
+const Shop = (() => {
+
+  const UPGRADES = {
+    power: {
+      id: 'power', name: 'Power Core', icon: '💥',
+      desc: 'Every ball hit deals more damage to bricks.',
+      maxLevel: 5, baseCost: 150, costGrowth: 1.55,
+      effectLabel: (lvl) => `+${lvl} damage / hit`
+    },
+    speed: {
+      id: 'speed', name: 'Velocity Cell', icon: '⚡',
+      desc: 'Balls travel faster for quicker, snappier turns.',
+      maxLevel: 5, baseCost: 100, costGrowth: 1.5,
+      effectLabel: (lvl) => `+${lvl * 40} px/s ball speed`
+    },
+    startBalls: {
+      id: 'startBalls', name: 'Twin Emitter', icon: '🔮',
+      desc: 'Start every run with extra balls already loaded.',
+      maxLevel: 3, baseCost: 400, costGrowth: 1.8,
+      effectLabel: (lvl) => `+${lvl} starting ball${lvl === 1 ? '' : 's'}`
+    },
+    comboWindow: {
+      id: 'comboWindow', name: 'Flow Stabilizer', icon: '🌀',
+      desc: 'Gives you more breathing room to keep a combo alive.',
+      maxLevel: 5, baseCost: 120, costGrowth: 1.5,
+      effectLabel: (lvl) => `+${(lvl * 0.15).toFixed(2)}s combo window`
+    },
+    coinMagnet: {
+      id: 'coinMagnet', name: 'Coin Magnet', icon: '🧲',
+      desc: 'Earn more coins from bricks and Lucky Orbs.',
+      maxLevel: 5, baseCost: 150, costGrowth: 1.55,
+      effectLabel: (lvl) => `+${lvl * 20}% coin gain`
+    }
+  };
+
+  function costFor(id, level) {
+    const u = UPGRADES[id];
+    return Math.round(u.baseCost * Math.pow(u.costGrowth, level));
+  }
+
+  function isMaxed(id, level) { return level >= UPGRADES[id].maxLevel; }
+
+  // Effective, ready-to-use multipliers/bonuses derived from a save's upgrade levels.
+  function getEffective(upgrades) {
+    const power = upgrades.power || 0;
+    const speed = upgrades.speed || 0;
+    const startBalls = upgrades.startBalls || 0;
+    const comboWindow = upgrades.comboWindow || 0;
+    const coinMagnet = upgrades.coinMagnet || 0;
+    return {
+      ballDamage: 1 + power,
+      ballSpeed: 640 + speed * 40,
+      extraStartBalls: startBalls,
+      comboWindowBonus: comboWindow * 0.15,
+      coinMultiplier: 1 + coinMagnet * 0.2
+    };
+  }
+
+  return { UPGRADES, costFor, isMaxed, getEffective };
+})();
+
+/* ============================================================
+   Ricochet Nova — rewards.js
+   Daily login reward ladder (separate from the Daily Challenge
+   board — this is a simple "come back tomorrow" coin bonus).
+   ============================================================ */
+'use strict';
+
+const DailyRewards = (() => {
+  // 7-day ladder, then loops. Streak resets if a day is missed.
+  const LADDER = [40, 60, 90, 120, 160, 220, 320];
+
+  function rewardForStreak(streak) {
+    const idx = Utils.clamp(streak - 1, 0, LADDER.length - 1);
+    return LADDER[idx];
+  }
+
+  return { LADDER, rewardForStreak };
+})();
+
 /* ============================================================
    Ricochet Nova — game.js
    The core game engine: swipe aiming, trajectory prediction,
@@ -964,6 +1304,12 @@ class Game {
     this.particles = new ParticleSystem(500);
     this.ballPool = new Utils.ObjectPool(() => new Ball(), b => b.reset(), 24);
     this.bricks = []; // active Brick instances (not pooled across boards — small counts)
+    this.orbPool = new Utils.ObjectPool(() => new LuckyOrb(), o => o.reset(), 6);
+    this.boss = null; // active Boss instance, or null outside boss levels
+    this.orbSpawnCooldown = 0;
+    this.coinTrickle = 0; // destroyed-brick counter feeding the coin economy
+    this.dmgPerHit = 1;
+    this.coinMultiplier = 1;
 
     this.state = GameState.IDLE;
     this.mode = 'endless';         // 'endless' | 'level' | 'daily'
@@ -1026,26 +1372,45 @@ class Game {
     this.rowHeight = Math.max(26, Math.min(40, this.width / this.cols * 0.62));
     this.launcherX = this.width / 2;
     this._layoutBricks();
+    this._layoutBoss();
   }
 
   startMode(mode, levelNumber = 1) {
     this.mode = mode;
     this.score = 0; this.combo = 0; this.comboTimer = 0;
     this.turnIndex = 0;
-    this.ballCount = 1;
     this.laserNextShot = false; this.freezeNextShift = false; this.scoreMultiplierTimer = 0;
     this.bricks.forEach(b => this._releaseBrick(b));
     this.bricks = [];
     this.ballPool.releaseAll();
+    this.orbPool.releaseAll();
+    this.orbSpawnCooldown = 4;
+    this.coinTrickle = 0;
+    this.boss = null;
     this.particles.clear();
     this.launcherX = this.width / 2;
     this.nextLauncherX = null;
+
+    // Apply permanent shop upgrades for this run.
+    const fx = Shop.getEffective(this.save.data.upgrades);
+    this.ballSpeed = fx.ballSpeed;
+    this.dmgPerHit = fx.ballDamage;
+    this.ballCount = 1 + fx.extraStartBalls;
+    this.comboWindow = 0.7 + fx.comboWindowBonus;
+    this.coinMultiplier = fx.coinMultiplier;
 
     if (mode === 'level') {
       this.levelData = LevelGen.generateLevel(levelNumber);
       this.rng = this.levelData.rng;
       this.rowQueue = this.levelData.rows.slice();
       this.dangerRow = 10;
+      if (this.levelData.isBoss) {
+        const boss = new Boss();
+        boss.row = 0; boss.hp = this.levelData.bossMaxHp; boss.maxHp = this.levelData.bossMaxHp;
+        boss.name = this.levelData.bossName; boss.alive = true; boss.spawnT = 0;
+        this.boss = boss;
+        this.audio.bossAppear();
+      }
     } else if (mode === 'daily') {
       const dk = Utils.todayKey();
       this.levelData = LevelGen.generateDaily(dk);
@@ -1061,11 +1426,17 @@ class Game {
 
     // Seed initial rows onto the board. Each new row must push previously
     // placed rows down first, otherwise every row would stack at row 0.
+    // (The boss, if any, always stays fixed at row 0 during this seeding —
+    // filler bricks are shifted below it afterward instead.)
     const startRows = mode === 'endless' ? 3 : this.rowQueue.length;
     for (let i = 0; i < startRows; i++) {
-      if (i > 0) for (const b of this.bricks) b.row += 1;
+      if (i > 0) { for (const b of this.bricks) b.row += 1; }
       this._spawnRow();
     }
+    // On boss levels the boss itself occupies row 0 exclusively — push any
+    // filler bricks down one more row so they don't overlap it visually.
+    if (this.boss) { for (const b of this.bricks) b.row += 1; }
+    this._layoutBoss();
 
     this.state = GameState.AIM;
     this.aimAngle = -Math.PI / 2;
@@ -1121,6 +1492,15 @@ class Game {
       b.x = b.col * colW + 3;
       b.y = this.topMargin + b.row * this.rowHeight + 3;
     }
+  }
+
+  _layoutBoss() {
+    if (!this.boss) return;
+    const boss = this.boss;
+    boss.w = this.width - 16;
+    boss.h = this.rowHeight * 1.5 - 6;
+    boss.x = 8;
+    boss.y = this.topMargin + boss.row * this.rowHeight + 3;
   }
 
   _releaseBrick(b) { b.alive = false; }
@@ -1221,7 +1601,26 @@ class Game {
       if (b.spawnT < 1) b.spawnT = Math.min(1, b.spawnT + dt * 6);
     }
 
+    if (this.boss) {
+      if (this.boss.hitFlash > 0) this.boss.hitFlash -= dt;
+      if (this.boss.shakeT > 0) this.boss.shakeT -= dt;
+      if (this.boss.spawnT < 1) this.boss.spawnT = Math.min(1, this.boss.spawnT + dt * 4);
+    }
+
+    this._updateOrbs(dt);
     this.particles.update(dt);
+  }
+
+  _updateOrbs(dt) {
+    const arr = this.orbPool.active;
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const o = arr[i];
+      o.age += dt;
+      o.y += o.vy * dt;
+      o.x = o.baseX + Math.sin(o.age * 2 + o.bobPhase) * 14;
+      if (Math.random() < dt * 6) this.particles.sparkle(o.x, o.y, '#FFD84B');
+      if (o.y - o.radius > this.height - 10) this.orbPool.release(o); // drifted off-screen, gone
+    }
   }
 
   _stepBalls(dt) {
@@ -1242,8 +1641,14 @@ class Game {
       else if (b.x + radius > this.width) { b.x = this.width - radius; b.vx = -Math.abs(b.vx); this.audio.wallBounce(); }
       if (b.y - radius < this.topMargin - this.rowHeight * 0.5) { b.y = this.topMargin - this.rowHeight * 0.5 + radius; b.vy = Math.abs(b.vy); this.audio.wallBounce(); }
 
+      // boss (checked before regular bricks — it spans the full board width)
+      this._resolveBossCollision(b, radius);
+
       // bricks
       this._resolveBrickCollision(b, radius);
+
+      // lucky orbs (no bounce — just collect on contact)
+      this._resolveOrbCollision(b, radius);
 
       // bottom / return
       if (b.y - radius > this.height - 20) {
@@ -1258,6 +1663,96 @@ class Game {
     }
   }
 
+  _resolveOrbCollision(ball, radius) {
+    const arr = this.orbPool.active;
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const o = arr[i];
+      const d = Utils.dist(ball.x, ball.y, o.x, o.y);
+      if (d < radius + o.radius) {
+        this._collectOrb(o);
+        this.orbPool.release(o);
+      }
+    }
+  }
+
+  _collectOrb(orb) {
+    const reward = LuckyOrb.rollReward(this.rng);
+    this.audio.orbCollect();
+    this.particles.burst(orb.x, orb.y, '#FFD84B', 24, { speed: 260, life: 0.7 });
+    this._shake(0.12, 4);
+    let detailText = '';
+    switch (reward.id) {
+      case 'coins': {
+        const n = Math.round((12 + Math.floor(Math.random() * 10)) * this.coinMultiplier);
+        this.save.addCoins(n); detailText = `+${n} coins`;
+        break;
+      }
+      case 'bigCoins': {
+        const n = Math.round((35 + Math.floor(Math.random() * 20)) * this.coinMultiplier);
+        this.save.addCoins(n); detailText = `+${n} coins`;
+        break;
+      }
+      case 'score': {
+        const n = 250 + Math.floor(Math.random() * 250);
+        this.score += n; detailText = `+${n} score`;
+        break;
+      }
+      case 'multiball': {
+        this.ballsToLaunch += 2; this.ballsLaunchedThisTurn += 0; detailText = '+2 balls this shot';
+        break;
+      }
+    }
+    this.onEvent('orb', { label: reward.label, detail: detailText });
+    this.onEvent('hud', this._hud());
+  }
+
+  _resolveBossCollision(ball, radius) {
+    const boss = this.boss;
+    if (!boss || !boss.alive || ball.laser) return; // laser balls are handled with bricks-style pass-through below
+    const cx = Utils.clamp(ball.x, boss.x, boss.x + boss.w);
+    const cy = Utils.clamp(ball.y, boss.y, boss.y + boss.h);
+    const dx = ball.x - cx, dy = ball.y - cy;
+    if (dx * dx + dy * dy > radius * radius) return;
+
+    // Bosses only ever get hit from below/sides (a wide flat target) — reflect vertically primarily.
+    const overlapY = (boss.h / 2 + radius) - Math.abs(ball.y - (boss.y + boss.h / 2));
+    ball.vy = ball.y < boss.y + boss.h / 2 ? -Math.abs(ball.vy) : Math.abs(ball.vy);
+    ball.y += ball.y < boss.y + boss.h / 2 ? -overlapY : overlapY;
+
+    this._damageBoss(boss, this.dmgPerHit);
+  }
+
+  _damageBoss(boss, dmg) {
+    const defeated = boss.takeHit(dmg);
+    this.audio.bossHit();
+    this.particles.burst(
+      Utils.clamp(boss.x + boss.w * (0.2 + Math.random() * 0.6), boss.x, boss.x + boss.w),
+      boss.y + boss.h / 2, '#FF4F5E', 10, { speed: 160, life: 0.4 }
+    );
+    // Boss hits keep the combo flowing even though the boss never "destroys" mid-fight.
+    this.combo++;
+    this.comboTimer = this.comboWindow;
+    if (this.combo > 1 && this.combo % 3 === 0) this.audio.combo(this.combo);
+    this.coinTrickle++;
+    if (this.coinTrickle % 6 === 0) this.save.addCoins(Math.round(2 * this.coinMultiplier));
+
+    if (defeated) this._defeatBoss(boss);
+    this.onEvent('hud', this._hud());
+  }
+
+  _defeatBoss(boss) {
+    boss.alive = false;
+    this.audio.bossDefeat();
+    this._shake(0.4, 12);
+    for (let i = 0; i < 4; i++) {
+      this.particles.burst(boss.x + boss.w * (i + 0.5) / 4, boss.y + boss.h / 2, '#FF6BD6', 26, { speed: 300, life: 0.9 });
+    }
+    const bonusScore = boss.maxHp * 8;
+    this.score += bonusScore;
+    const isFirstClear = this.save.markBossDefeated(this.levelData.number);
+    this.save.addCoins(Math.round((80 + this.levelData.number * 2) * (isFirstClear ? 1 : 0.4) * this.coinMultiplier));
+  }
+
   _resolveBrickCollision(ball, radius) {
     for (const brick of this.bricks) {
       if (!brick.alive) continue;
@@ -1268,12 +1763,11 @@ class Game {
       if (distSq > radius * radius) continue;
 
       const isLaser = ball.laser;
-      const laserKey = brick; // per-shot per-brick single hit tracked via Set of brick refs on the ball
       if (isLaser) {
         if (!ball._laserHit) ball._laserHit = new Set();
         if (!ball._laserHit.has(brick)) {
           ball._laserHit.add(brick);
-          this._damageBrick(brick, 1);
+          this._damageBrick(brick, this.dmgPerHit);
         }
         continue; // laser balls pass straight through, no bounce
       }
@@ -1297,7 +1791,7 @@ class Game {
         ball.vy = Math.sin(ang) * speed;
       }
 
-      this._damageBrick(brick, 1);
+      this._damageBrick(brick, this.dmgPerHit);
       this.audio.brickHit(1 + brick.row * 0.03);
       break; // one brick collision per ball per frame keeps physics stable
     }
@@ -1319,6 +1813,11 @@ class Game {
     const scoreMult = this.scoreMultiplierTimer > 0 ? 2 : 1;
     const gained = Math.round(brick.maxValue * 12 * comboMult * scoreMult);
     this.score += gained;
+
+    // Coin trickle: a small, steady coin income from ordinary play so the
+    // shop economy doesn't rely solely on level-complete/orb rewards.
+    this.coinTrickle++;
+    if (this.coinTrickle % 5 === 0) this.save.addCoins(Math.round(1 * this.coinMultiplier));
 
     const color = brick.color();
     this.particles.burst(brick.x + brick.w / 2, brick.y + brick.h / 2, color, 16);
@@ -1363,22 +1862,48 @@ class Game {
       this.freezeNextShift = false; // row shift & spawn skipped entirely this turn
     } else {
       for (const b of this.bricks) b.row += 1;
+      if (this.boss && this.boss.alive) this.boss.row += 1;
       this._spawnRow();
     }
     this._layoutBricks();
+    this._layoutBoss();
+    this._maybeSpawnOrb();
 
-    // Danger check
-    const inDanger = this.bricks.some(b => b.alive && b.row >= this.dangerRow - 1);
+    // Danger check (boss counts too — it must be defeated before it descends)
+    const bossInDanger = this.boss && this.boss.alive && this.boss.row >= this.dangerRow - 1;
+    const inDanger = bossInDanger || this.bricks.some(b => b.alive && b.row >= this.dangerRow - 1);
     this.dangerFlashTimer = inDanger ? 0.9 : 0;
-    const lost = this.bricks.some(b => b.alive && b.row >= this.dangerRow);
+    const bossLost = this.boss && this.boss.alive && this.boss.row >= this.dangerRow;
+    const lost = bossLost || this.bricks.some(b => b.alive && b.row >= this.dangerRow);
     if (lost) { this._gameOver(); return; }
     if (inDanger) this.audio.danger();
 
-    // Win check (level / daily target)
-    if (this.mode === 'level' && this.score >= this.levelData.targetScore) { this._levelComplete(); return; }
+    // Win check
+    if (this.mode === 'level') {
+      if (this.levelData.isBoss) {
+        if (this.boss && !this.boss.alive) { this._levelComplete(); return; }
+      } else if (this.score >= this.levelData.targetScore) {
+        this._levelComplete(); return;
+      }
+    }
 
     this.state = GameState.AIM;
     this.onEvent('hud', this._hud());
+  }
+
+  _maybeSpawnOrb() {
+    if (this.orbSpawnCooldown > 0) { this.orbSpawnCooldown--; return; }
+    const chance = 0.16;
+    if (Math.random() < chance && this.orbPool.active.length < 2) {
+      const o = this.orbPool.obtain();
+      o.reset();
+      o.baseX = 30 + Math.random() * (this.width - 60);
+      o.x = o.baseX;
+      o.y = this.topMargin - this.rowHeight;
+      o.vy = 34 + Math.random() * 14;
+      o.active = true;
+      this.orbSpawnCooldown = 3 + Math.floor(Math.random() * 3);
+    }
   }
 
   _gameOver() {
@@ -1392,13 +1917,17 @@ class Game {
 
   _levelComplete() {
     this.state = GameState.LEVELCOMPLETE;
-    const t = this.levelData.starThresholds;
-    let stars = 1;
-    if (this.score >= t[2]) stars = 3; else if (this.score >= t[1]) stars = 2; else stars = 1;
+    let stars;
+    if (this.levelData.isBoss) {
+      stars = 3; // defeating the boss at all is the win condition for boss levels
+    } else {
+      const t = this.levelData.starThresholds;
+      stars = this.score >= t[2] ? 3 : this.score >= t[1] ? 2 : 1;
+    }
     this.save.recordLevelComplete(this.levelData.number, stars, this.score);
     this.save.addCoins(20 + stars * 10);
     this.audio.levelComplete();
-    this.onEvent('levelcomplete', { score: this.score, stars, level: this.levelData.number });
+    this.onEvent('levelcomplete', { score: this.score, stars, level: this.levelData.number, isBoss: !!this.levelData.isBoss, bossName: this.levelData.bossName });
   }
 
   pause() { if (this.state !== GameState.GAMEOVER && this.state !== GameState.LEVELCOMPLETE) { this._prePauseState = this.state; this.state = GameState.PAUSED; } }
@@ -1415,7 +1944,9 @@ class Game {
       turnIndex: this.turnIndex,
       danger: this.dangerFlashTimer > 0,
       scoreMultActive: this.scoreMultiplierTimer > 0,
-      laserReady: this.laserNextShot
+      laserReady: this.laserNextShot,
+      coins: this.save.data.coins,
+      boss: this.boss ? { name: this.boss.name, hp: this.boss.hp, maxHp: this.boss.maxHp, alive: this.boss.alive } : null
     };
   }
 
@@ -1425,14 +1956,17 @@ class Game {
     ctx.save();
     ctx.clearRect(0, 0, this.width, this.height);
 
-    if (this.shakeTime > 0) {
+    const reduceMotion = this.save.data.settings.reduceMotion;
+    if (this.shakeTime > 0 && !reduceMotion) {
       const m = this.shakeMag * (this.shakeTime / 0.18);
       ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m);
     }
 
     this._renderBackground(ctx);
     this._renderDangerLine(ctx);
+    this._renderBoss(ctx);
     this._renderBricks(ctx);
+    this._renderOrbs(ctx);
     this._renderBalls(ctx);
     this.particles.render(ctx);
     if (this.state === GameState.AIM) this._renderAim(ctx);
@@ -1444,26 +1978,60 @@ class Game {
   _renderBackground(ctx) {
     const g = ctx.createLinearGradient(0, 0, 0, this.height);
     g.addColorStop(0, '#0B0E1D');
-    g.addColorStop(0.55, '#0E1330');
-    g.addColorStop(1, '#141032');
+    g.addColorStop(0.5, '#10132C');
+    g.addColorStop(0.8, '#161235');
+    g.addColorStop(1, '#1B1440');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // faint aurora glow bands
+    // Twinkling starfield — cheap, deterministic per-frame, no allocation.
+    if (!this._starSeedCache) this._buildStarfield();
+    const t = performance.now() / 1000;
     ctx.save();
-    ctx.globalAlpha = 0.10;
-    const t = performance.now() / 4000;
+    for (const s of this._starSeedCache) {
+      const tw = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+      ctx.globalAlpha = s.baseA * tw;
+      ctx.fillStyle = '#EAF0FF';
+      ctx.fillRect(s.x * this.width, s.y * this.height * 0.75, s.size, s.size);
+    }
+    ctx.restore();
+
+    // Drifting aurora glow bands
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    const tt = performance.now() / 4200;
     for (let i = 0; i < 3; i++) {
       const gg = ctx.createRadialGradient(
-        this.width * (0.2 + i * 0.3), this.height * 0.15 + Math.sin(t + i) * 20, 10,
-        this.width * (0.2 + i * 0.3), this.height * 0.15, 260
+        this.width * (0.2 + i * 0.3), this.height * 0.15 + Math.sin(tt + i) * 24, 10,
+        this.width * (0.2 + i * 0.3), this.height * 0.15, 280
       );
       gg.addColorStop(0, i === 0 ? '#3AF2C7' : i === 1 ? '#8C6BFF' : '#FF6BD6');
       gg.addColorStop(1, 'transparent');
       ctx.fillStyle = gg;
-      ctx.fillRect(0, 0, this.width, this.height * 0.5);
+      ctx.fillRect(0, 0, this.width, this.height * 0.55);
     }
     ctx.restore();
+
+    // Soft vignette for depth/focus toward the play area.
+    ctx.save();
+    const vg = ctx.createRadialGradient(this.width / 2, this.height * 0.45, this.height * 0.25, this.width / 2, this.height * 0.45, this.height * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, this.width, this.height);
+    ctx.restore();
+  }
+
+  _buildStarfield() {
+    this._starSeedCache = [];
+    const count = 46;
+    let rng = Utils.mulberry32(1337);
+    for (let i = 0; i < count; i++) {
+      this._starSeedCache.push({
+        x: rng(), y: rng(), size: 1 + rng() * 1.6,
+        baseA: 0.15 + rng() * 0.35, speed: 0.4 + rng() * 1.2, phase: rng() * Math.PI * 2
+      });
+    }
   }
 
   _renderDangerLine(ctx) {
@@ -1476,6 +2044,74 @@ class Game {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.width, y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
+  }
+
+  _renderBoss(ctx) {
+    const boss = this.boss;
+    if (!boss || !boss.alive) return;
+    const scale = 0.7 + 0.3 * boss.spawnT;
+    const cx = boss.x + boss.w / 2, cy = boss.y + boss.h / 2;
+    const shakeOff = boss.shakeT > 0 ? (Math.random() - 0.5) * 4 : 0;
+    ctx.save();
+    ctx.translate(cx + shakeOff, cy);
+    ctx.scale(scale, scale);
+    const w = boss.w, h = boss.h;
+    const flashing = boss.hitFlash > 0;
+    const hpRatio = boss.hp / boss.maxHp;
+
+    ctx.shadowColor = '#FF4F5E';
+    ctx.shadowBlur = flashing ? 30 : 16;
+    const grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+    grad.addColorStop(0, flashing ? '#ffffff' : '#3a1030');
+    grad.addColorStop(0.5, '#5c1638');
+    grad.addColorStop(1, '#FF4F5E');
+    ctx.fillStyle = grad;
+    roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, -w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 11);
+    ctx.stroke();
+
+    ctx.fillStyle = '#F4F7FF';
+    ctx.font = `700 ${Math.round(h * 0.22)}px 'Space Grotesk', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(boss.name, 0, -h * 0.14);
+
+    // HP bar
+    const barW = w * 0.82, barH = 8;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    roundRect(ctx, -barW / 2, h * 0.14, barW, barH, 4);
+    ctx.fill();
+    const fillGrad = ctx.createLinearGradient(-barW / 2, 0, barW / 2, 0);
+    fillGrad.addColorStop(0, '#3AF2C7');
+    fillGrad.addColorStop(1, '#FF6BD6');
+    ctx.fillStyle = fillGrad;
+    roundRect(ctx, -barW / 2, h * 0.14, Math.max(2, barW * hpRatio), barH, 4);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  _renderOrbs(ctx) {
+    for (const o of this.orbPool.active) {
+      ctx.save();
+      ctx.shadowColor = '#FFD84B';
+      ctx.shadowBlur = 18;
+      const g = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, o.radius);
+      g.addColorStop(0, '#FFF6D8');
+      g.addColorStop(0.6, '#FFD84B');
+      g.addColorStop(1, '#FF8C4B');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.radius - 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
   }
 
   _renderBricks(ctx) {
@@ -1649,9 +2285,12 @@ class UIManager {
     this._bindGameOverlays();
     this._bindSettings();
     this._bindTutorial();
+    this._bindShop();
+    this._bindDailyReward();
 
     this._refreshMenuStats();
     this._applySettingsToUI();
+    this._refreshDailyRewardBadge();
   }
 
   _cacheEls() {
@@ -1660,7 +2299,8 @@ class UIManager {
       menu: this.$('screen-menu'),
       levels: this.$('screen-levels'),
       game: this.$('screen-game'),
-      settings: this.$('screen-settings')
+      settings: this.$('screen-settings'),
+      shop: this.$('screen-shop')
     };
   }
 
@@ -1681,8 +2321,10 @@ class UIManager {
     this.$('btnLevelMode').onclick = () => { this._buildLevelGrid(); this.showScreen('levels'); };
     this.$('btnEndless').onclick = () => this._requestStart('endless');
     this.$('btnDaily').onclick = () => this._requestStart('daily');
+    this.$('btnShop').onclick = () => { this._shopReturnTo = 'menu'; this._buildShop(); this.showScreen('shop'); };
     this.$('btnSettings').onclick = () => { this._settingsReturnTo = 'menu'; this.showScreen('settings'); };
     this.$('btnHowTo').onclick = () => { this._showTutorialOverlay(true); };
+    this.$('btnDailyReward').onclick = () => this._openDailyReward();
     this._refreshDailyStatus();
   }
 
@@ -1713,6 +2355,116 @@ class UIManager {
       grid.appendChild(cell);
     }
     this.$('btnLevelsBack').onclick = () => this.showScreen('menu');
+  }
+
+  // ============================================================ UPGRADE SHOP
+  _bindShop() {
+    this.$('btnShopBack').onclick = () => {
+      const dest = this._shopReturnTo || 'menu';
+      if (dest === 'pause') { this.showScreen('game'); this._showOverlay('overlayPause'); }
+      else this.showScreen('menu');
+    };
+  }
+
+  _buildShop() {
+    const list = this.$('shopList');
+    list.innerHTML = '';
+    this.$('shopCoins').textContent = Utils.formatNumber(this.save.data.coins);
+    for (const id of Object.keys(Shop.UPGRADES)) {
+      const u = Shop.UPGRADES[id];
+      const level = this.save.getUpgradeLevel(id);
+      const maxed = Shop.isMaxed(id, level);
+      const cost = maxed ? null : Shop.costFor(id, level);
+      const canAfford = !maxed && this.save.data.coins >= cost;
+
+      const card = document.createElement('div');
+      card.className = 'shop-card';
+      const pips = Array.from({ length: u.maxLevel }, (_, i) =>
+        `<div class="shop-pip${i < level ? ' filled' : ''}"></div>`).join('');
+      card.innerHTML = `
+        <div class="shop-card-top">
+          <div class="shop-card-icon">${u.icon}</div>
+          <div class="shop-card-info">
+            <div class="shop-card-name">${u.name} <span style="color:var(--text-lo); font-weight:500;">Lv.${level}/${u.maxLevel}</span></div>
+            <div class="shop-card-desc">${u.desc}</div>
+            <div class="shop-card-levels">${pips}</div>
+          </div>
+        </div>
+        <div class="shop-card-bottom">
+          <div class="shop-card-effect">${u.effectLabel(level)}</div>
+          <button class="shop-buy-btn${maxed ? ' maxed' : ''}" ${(!maxed && !canAfford) ? 'disabled' : ''}>
+            ${maxed ? 'MAXED' : `🪙 ${Utils.formatNumber(cost)}`}
+          </button>
+        </div>`;
+      const buyBtn = card.querySelector('.shop-buy-btn');
+      if (!maxed) {
+        buyBtn.onclick = () => this._purchaseUpgrade(id);
+      }
+      list.appendChild(card);
+    }
+  }
+
+  _purchaseUpgrade(id) {
+    const level = this.save.getUpgradeLevel(id);
+    if (Shop.isMaxed(id, level)) return;
+    const cost = Shop.costFor(id, level);
+    if (!this.save.spendCoins(cost)) { this.audio.shopError(); return; }
+    this.save.setUpgradeLevel(id, level + 1);
+    this.audio.shopPurchase();
+    this._buildShop();
+    this._refreshMenuStats();
+  }
+
+  // ============================================================ DAILY LOGIN REWARD
+  _bindDailyReward() {
+    this.$('btnClaimDaily').onclick = () => {
+      const key = Utils.todayKey();
+      const streak = this.save.claimDailyReward(key);
+      const amount = DailyRewards.rewardForStreak(streak);
+      this.save.addCoins(amount);
+      this.audio.dailyClaim();
+      this._hideOverlay('overlayDailyReward');
+      this._refreshMenuStats();
+      this._refreshDailyRewardBadge();
+    };
+  }
+
+  _openDailyReward() {
+    const key = Utils.todayKey();
+    const available = this.save.isDailyRewardAvailable(key);
+    const streak = this.save.data.dailyReward.streak;
+    const nextStreak = available ? Math.min(7, (this._isConsecutiveFromToday(key) ? streak : 0) + 1) : streak;
+
+    this.$('dailyRewardSub').textContent = available
+      ? `Day ${nextStreak} streak bonus — come back tomorrow to keep it going.`
+      : 'Already claimed today. Come back tomorrow!';
+    this.$('btnClaimDaily').style.display = available ? 'block' : 'none';
+    this.$('btnClaimDaily').disabled = !available;
+
+    const ladder = this.$('rewardLadder');
+    ladder.innerHTML = DailyRewards.LADDER.map((amt, i) => {
+      const dayNum = i + 1;
+      const isToday = available && dayNum === nextStreak;
+      const isClaimed = dayNum < nextStreak || (!available && dayNum <= streak);
+      return `<div class="reward-day${isToday ? ' today' : ''}${isClaimed ? ' claimed' : ''}">
+        <div>Day ${dayNum}</div><div class="amt">🪙${amt}</div>
+      </div>`;
+    }).join('');
+
+    this._showOverlay('overlayDailyReward');
+  }
+
+  _isConsecutiveFromToday(todayKeyStr) {
+    const last = this.save.data.dailyReward.lastClaimedKey;
+    if (!last) return false;
+    const prev = new Date(last + 'T00:00:00');
+    const today = new Date(todayKeyStr + 'T00:00:00');
+    return Math.round((today - prev) / 86400000) === 1;
+  }
+
+  _refreshDailyRewardBadge() {
+    const available = this.save.isDailyRewardAvailable(Utils.todayKey());
+    this.$('rewardDot').style.display = available ? 'block' : 'none';
   }
 
   // ============================================================ START / TUTORIAL GATE
@@ -1761,6 +2513,7 @@ class UIManager {
       this._startGame(this.game.mode, this.game.levelData ? this.game.levelData.number : 1);
     };
     this.$('btnPauseSettings').onclick = () => { this._settingsReturnTo = 'pause'; this.showScreen('settings'); };
+    this.$('btnPauseShop').onclick = () => { this._shopReturnTo = 'pause'; this._buildShop(); this.showScreen('shop'); };
     this.$('btnQuitToMenu').onclick = () => { this._hideAllGameOverlays(); this.game.stop(); this._refreshMenuStats(); this._refreshDailyStatus(); this.showScreen('menu'); };
 
     this.$('btnPlayAgain').onclick = () => this._startGame(this.game.mode, this.game.levelData ? this.game.levelData.number : 1);
@@ -1780,6 +2533,7 @@ class UIManager {
   onGameEvent(name, payload) {
     if (name === 'hud') this._updateHud(payload);
     else if (name === 'powerup') this._flashPowerup(payload);
+    else if (name === 'orb') this._flashOrb(payload);
     else if (name === 'gameover') this._onGameOver(payload);
     else if (name === 'levelcomplete') this._onLevelComplete(payload);
   }
@@ -1787,9 +2541,16 @@ class UIManager {
   _updateHud(hud) {
     this.$('hudScore').textContent = Utils.formatNumber(hud.score);
     this.$('hudCombo').textContent = hud.combo > 1 ? `x${hud.combo} combo` : '';
-    if (hud.mode === 'level' && hud.targetScore) {
+    this.$('hudCoins').textContent = Utils.formatNumber(hud.coins);
+    if (hud.mode === 'level' && hud.targetScore && !(hud.boss)) {
       this.$('hudTarget').textContent = Utils.formatNumber(hud.targetScore);
       const pct = Utils.clamp((hud.score / hud.targetScore) * 100, 0, 100);
+      this.$('hudProgressFill').style.width = pct + '%';
+    }
+    if (hud.boss) {
+      this.$('hudTargetWrap').style.display = 'block';
+      this.$('hudTarget').textContent = hud.boss.name;
+      const pct = Utils.clamp((hud.boss.hp / hud.boss.maxHp) * 100, 0, 100);
       this.$('hudProgressFill').style.width = pct + '%';
     }
     const badges = [];
@@ -1799,14 +2560,18 @@ class UIManager {
     this.$('hudBadges').innerHTML = badges.join('');
   }
 
-  _flashPowerup(def) {
-    // Lightweight toast via combo label reuse to avoid extra DOM churn.
-    const el = this.$('hudCombo');
-    const prev = el.textContent;
-    el.textContent = `${def.name}!`;
-    el.style.color = def.color;
-    setTimeout(() => { el.style.color = ''; }, 900);
+  _showToast(text) {
+    const stack = this.$('toastStack');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    stack.appendChild(el);
+    setTimeout(() => el.remove(), 1650);
+    while (stack.children.length > 3) stack.removeChild(stack.firstChild);
   }
+
+  _flashPowerup(def) { this._showToast(`${def.name}!`); }
+  _flashOrb(info) { this._showToast(`✨ ${info.label} — ${info.detail}`); }
 
   _onGameOver(payload) {
     this.$('gameOverScore').textContent = Utils.formatNumber(payload.score);
@@ -1822,6 +2587,8 @@ class UIManager {
     this.$('starsRow').innerHTML = starsHtml;
     this.$('levelCompleteScore').textContent = Utils.formatNumber(payload.score);
     this.$('btnNextLevel').style.display = payload.level < 100 ? 'block' : 'none';
+    const titleEl = document.querySelector('#overlayLevelComplete .overlay-title');
+    titleEl.textContent = payload.isBoss ? `${payload.bossName} Defeated!` : 'Level Cleared!';
     this._showOverlay('overlayLevelComplete');
   }
 
@@ -1845,6 +2612,11 @@ class UIManager {
       this.save.updateSettings({ hapticsEnabled: on });
       this.$('toggleHaptics').classList.toggle('on', on);
     };
+    this.$('toggleReduceMotion').onclick = () => {
+      const on = !this.save.data.settings.reduceMotion;
+      this.save.updateSettings({ reduceMotion: on });
+      this.$('toggleReduceMotion').classList.toggle('on', on);
+    };
   }
 
   _applySettingsToUI() {
@@ -1853,6 +2625,7 @@ class UIManager {
     this.$('musicSlider').value = s.musicVolume;
     this.$('toggleMute').classList.toggle('on', s.muted);
     this.$('toggleHaptics').classList.toggle('on', s.hapticsEnabled);
+    this.$('toggleReduceMotion').classList.toggle('on', s.reduceMotion);
   }
 }
 
@@ -1910,9 +2683,24 @@ class UIManager {
       setTimeout(() => {
         game.resize();
         ui.showScreen('menu');
+        // Gently surface the daily login reward, if one's waiting, shortly
+        // after the menu appears (not instantly, so it doesn't feel like a
+        // pop-up ambush before the player even sees the menu).
+        if (save.isDailyRewardAvailable(Utils.todayKey())) {
+          setTimeout(() => ui._openDailyReward(), 700);
+        }
       }, 180);
     }
   }, 70);
+
+  // --- PWA: install support (manifest is linked in index.html) ---------
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch((err) => {
+        console.warn('[RicochetNova] service worker registration failed:', err);
+      });
+    });
+  }
 
   // --- Global error guard: keep the app alive & log for diagnosis ------
   window.addEventListener('error', (e) => {
@@ -1925,6 +2713,11 @@ class UIManager {
   window.POWERUPS = POWERUPS;
   window.Utils = Utils;
   window.SaveManager = SaveManager;
+  window.Shop = Shop;
+  window.DailyRewards = DailyRewards;
+  window.Brick = Brick;
+  window.Boss = Boss;
+  window.LuckyOrb = LuckyOrb;
 })();
 
 </script>
